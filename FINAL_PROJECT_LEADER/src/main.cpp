@@ -280,7 +280,7 @@ void SetMotor(int PIN, int DIRECTION, double SETPOINT)
  {
    COUNTER_LEFT_ENCODER.update(0);
    MOTOR_LEFT_SETPOINT = SETPOINT;
-   LEFT_M
+   
    if (DIRECTION == BACKWARD)
    {
      digitalWrite(L_D1, HIGH);

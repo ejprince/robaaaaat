@@ -1,8 +1,5 @@
 #include <PID_v1.h>
 #include <Encoder.h>
-
-
-
 #define LEFT_SIDE -1
 #define RIGHT_SIDE 1
 #define BACK_SIDE 0
@@ -383,11 +380,10 @@ void moveTowardGoal() {
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
-  Serial1.begin(28800);
+  Serial1.begin(9600);
   while(!Serial1)
 
   EncVelTimer.begin(calcVelocity, ENC_SAMPLE_DUR);
-
   pinMode(PWM_L, OUTPUT);
   pinMode(L_D1, OUTPUT);
   pinMode(L_D2, OUTPUT);
@@ -448,11 +444,10 @@ void loop() {
   }
     if (Serial1.available())
     {
-    Serial.println("available");
     char buff[50];
     String TEENSY = Serial1.readString();
     TEENSY.toCharArray(buff, 50);
+    Serial.println(buff);
     char* token = strtok(buff, ",");
-    Serial.println(TEENSY);
     }
 }

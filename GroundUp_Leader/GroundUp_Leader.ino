@@ -78,7 +78,7 @@ int COUNTER_TIMER_R_OLD = 0;
 
 #define MAX_DRIVE_SPEED_RPM 100
 
-#define NINETY_DEG_TURN_COUNTS 0
+#define NINETY_DEG_TURN_COUNTS 4500
 
 double LMotorV, RMotorV, LMotorDC, RMotorDC, LMotorVSet, RMotorVSet;
 
@@ -102,7 +102,7 @@ double RPKi = 0;
 double RPKd = 0;
 
 double ArmPKp = 0.5;
-double ArmPKi = 0;
+double ArmPKi = 0.1;
 double ArmPKd = 0.1;
 
 double WallDist, TurnAmount, WallDistSet;
@@ -242,7 +242,7 @@ void VelPID(int motor, int velocity){
     RMotorVSet = abs(velocity);
     R_V_PID.Compute();
     runMotor(motor, dir * RMotorDC);
-    Serial.print(RMotorV); Serial.print(", "); Serial.println(RMotorDC);
+    //Serial.print(RMotorV); Serial.print(", "); Serial.println(RMotorDC);
   }
 }
 
@@ -267,7 +267,6 @@ void PosPID(int motor, int pos){
 */
 
 bool DriveToPos(int LeftDist, int RightDist, int LeftVelocity, int RightVelocity){ // direction in the sign of velocity; sign of dist does nothing
-  ZeroDriveEncoders();
   bool LeftDone = false;
   bool RightDone = false;
   if (abs(getEncoderCounts(DRIVE_MOTOR_L)) < abs(LeftDist)){ 
@@ -291,10 +290,13 @@ bool DriveToPos(int LeftDist, int RightDist, int LeftVelocity, int RightVelocity
 
 void ArmPID(int pos){
   ArmMotorPos = getEncoderCounts(ARM_MOTOR);
+  ArmMotorPosSet = pos;
   Arm_P_PID.Compute();
   if ((ArmMotorDC < 0 && !(LowerLimitPressed())) || (ArmMotorDC > 0 && !(UpperLimitPressed()))){
     runMotor(ARM_MOTOR, ArmMotorDC);
   }
+  Serial.print(ArmMotorPos); Serial.print(" ");
+  Serial.println(ArmMotorDC);
 }
 
 // 3b Follow Wall
@@ -366,11 +368,17 @@ void setup() {
   R_P_PID.SetMode(AUTOMATIC);
   R_P_PID.SetOutputLimits(-MAX_DRIVE_SPEED_RPM, MAX_DRIVE_SPEED_RPM);
   Arm_P_PID.SetMode(AUTOMATIC);
-  Arm_P_PID.SetOutputLimits(-MAX_DRIVE_SPEED_RPM, MAX_DRIVE_SPEED_RPM);
+  Arm_P_PID.SetOutputLimits(-255, 255);
+  Arm_P_PID.SetSampleTime(50);
   
   Wall_PID.SetMode(AUTOMATIC);
   Wall_PID.SetOutputLimits(-WALLFOLLOW_MAXTURN, WALLFOLLOW_MAXTURN);
   delay(1000);
+  ZeroDriveEncoders();
+  while(!RotateTheta(90,10)){
+    delay(1);
+  }
+  
 }
 
 void loop() {
@@ -385,7 +393,7 @@ void loop() {
    rightUltra = TEENSY.substring(9,14).toFloat();
    frontUltra = TEENSY.substring(15,20).toFloat();
  }*/
+ 
  delay(1);
- VelPID(DRIVE_MOTOR_R, -50); 
 
 }

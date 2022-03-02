@@ -82,12 +82,12 @@ int COUNTER_TIMER_R_OLD = 0;
 
 double LMotorV, RMotorV, LMotorDC, RMotorDC, LMotorVSet, RMotorVSet;
 
-double LVKp = 10;
-double LVKi = 5;
+double LVKp = 2;
+double LVKi = 6;
 double LVKd = 0;
 
-double RVKp = 10;
-double RVKi = 5;
+double RVKp = 2;
+double RVKi = 6;
 double RVKd = 0;
 
 double LMotorPos, RMotorPos, LMotorDesV, RMotorDesV, LMotorPosSet, RMotorPosSet;
@@ -125,24 +125,29 @@ int leftUltra;
 int rightUltra;
 int frontUltra;
 
+double LMotorVel;
+double RMotorVel;
+
+IntervalTimer EncVelTimer;
+#define ENC_SAMPLE_DUR 5000
+
 /*--------------Level 1 Functions--------------*/
 // 1a Get Velocity
-float getVelocity(int motor){
-  float RPM = 0;
-  if (motor == DRIVE_MOTOR_L){
+void calcVelocity(){
     int CounterL = ENCODER_L.read()-COUNTER_L_OLD;
-    int CounterTimerL = millis()-COUNTER_TIMER_L_OLD;
-    COUNTER_TIMER_L_OLD = millis();
     COUNTER_L_OLD = ENCODER_L.read();
-    RPM = ((CounterL * 60) / (PULSES_PER_REVOLUTION)) / (CounterTimerL * (0.001) * DRIVE_GEAR_RATIO);
-  } else if (motor == DRIVE_MOTOR_R){
+    LMotorVel = ((CounterL * 60) / (PULSES_PER_REVOLUTION)) / (ENC_SAMPLE_DUR * (0.000001) * DRIVE_GEAR_RATIO);
     int CounterR = ENCODER_R.read()-COUNTER_R_OLD;
-    int CounterTimerR = millis()-COUNTER_TIMER_R_OLD;
-    COUNTER_TIMER_R_OLD = millis();
     COUNTER_R_OLD = ENCODER_R.read();
-    RPM = ((CounterR * 60) / (PULSES_PER_REVOLUTION)) / (CounterTimerR * (0.001) * DRIVE_GEAR_RATIO);
+    RMotorVel = ((CounterR * 60) / (PULSES_PER_REVOLUTION)) / (ENC_SAMPLE_DUR * (0.000001) * DRIVE_GEAR_RATIO);
+}
+
+double getVelocity(int motor){
+  if (motor == DRIVE_MOTOR_L){
+    return LMotorVel;
+  } else if (motor == DRIVE_MOTOR_R){
+    return RMotorVel;
   }
-  return RPM;
 }
 
 // 1b Get Encoder Counts
@@ -226,14 +231,18 @@ void Take(int dir){
 
 // 2b Velocity PID
 void VelPID(int motor, int velocity){
+  int dir = velocity/abs(velocity);
   if (motor == DRIVE_MOTOR_L){
-    LMotorV = getVelocity(motor);
+    LMotorV = abs(getVelocity(motor));
+    LMotorVSet = abs(velocity);
     L_V_PID.Compute();
-    runMotor(motor, LMotorDC);
+    runMotor(motor, dir * LMotorDC);
   } else if (motor == DRIVE_MOTOR_R){
-    RMotorV = getVelocity(motor);
+    RMotorV = abs(getVelocity(motor));
+    RMotorVSet = abs(velocity);
     R_V_PID.Compute();
-    runMotor(motor, RMotorDC);
+    runMotor(motor, dir * RMotorDC);
+    Serial.print(RMotorV); Serial.print(", "); Serial.println(RMotorDC);
   }
 }
 
@@ -329,6 +338,8 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
   Serial1.begin(38400);
+
+  EncVelTimer.begin(calcVelocity, ENC_SAMPLE_DUR);
   
   pinMode(PWM_L, OUTPUT);
   pinMode(L_D1, OUTPUT);
@@ -344,9 +355,11 @@ void setup() {
 
   
   L_V_PID.SetMode(AUTOMATIC);
-  L_V_PID.SetOutputLimits(-255,255);
+  L_V_PID.SetOutputLimits(0,255);
+  L_V_PID.SetSampleTime(50); 
   R_V_PID.SetMode(AUTOMATIC);
-  R_V_PID.SetOutputLimits(-255,255);
+  R_V_PID.SetOutputLimits(0,255);
+  R_V_PID.SetSampleTime(50);
 
   L_P_PID.SetMode(AUTOMATIC);
   L_P_PID.SetOutputLimits(-MAX_DRIVE_SPEED_RPM, MAX_DRIVE_SPEED_RPM);
@@ -357,7 +370,7 @@ void setup() {
   
   Wall_PID.SetMode(AUTOMATIC);
   Wall_PID.SetOutputLimits(-WALLFOLLOW_MAXTURN, WALLFOLLOW_MAXTURN);
-  
+  delay(1000);
 }
 
 void loop() {
@@ -372,5 +385,7 @@ void loop() {
    rightUltra = TEENSY.substring(9,14).toFloat();
    frontUltra = TEENSY.substring(15,20).toFloat();
  }*/
+ delay(1);
+ VelPID(DRIVE_MOTOR_R, -50); 
 
 }

@@ -2,6 +2,7 @@
 #include <Encoder.h>
 
 
+
 #define LEFT_SIDE -1
 #define RIGHT_SIDE 1
 #define BACK_SIDE 0
@@ -346,10 +347,44 @@ typedef enum {
 
 STATE_MACHINE state;
 
+void reverseOnLine() {
+    if (DriveToPos(5000,5000,15,15)) {
+    ZeroDriveEncoders();
+    state = ROTATE_TOWARD_WALL;
+  } 
+}
+void rotateTowardWall() {
+  if (DriveToPos(-4500,4500,15,15)) {
+    ZeroDriveEncoders();
+    state = MOVE_TOWARD_WALL;
+  }
+}
+void moveTowardWall() {
+  if (DriveToPos(12500,12500,15,15)) {
+    ZeroDriveEncoders();
+    state = ROTATE_TOWARD_GOAL;
+  }
+}
+void rotateTowardGoal() {
+  if (DriveToPos(4500,-4500,15,15)) {
+    ZeroDriveEncoders();
+    state = MOVE_TOWARD_GOAL;
+  }
+}
+void moveTowardGoal() {
+    if (DriveToPos(5000,5000,15,15)) {
+    ZeroDriveEncoders();
+    state = ROTATE_TOWARD_WALL;
+  }
+  
+}
+
+
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
-  Serial1.begin(38400);
+  Serial1.begin(28800);
+  while(!Serial1)
 
   EncVelTimer.begin(calcVelocity, ENC_SAMPLE_DUR);
 
@@ -388,38 +423,6 @@ void setup() {
 
 }
 
-void reverseOnLine() {
-    if (DriveToPos(5000,5000,15,15)) {
-    ZeroDriveEncoders();
-    state = ROTATE_TOWARD_WALL;
-  } 
-}
-void rotateTowardWall() {
-  if (DriveToPos(-4500,4500,15,15)) {
-    ZeroDriveEncoders();
-    state = MOVE_TOWARD_WALL;
-  }
-}
-void moveTowardWall() {
-  if (DriveToPos(12500,12500,15,15)) {
-    ZeroDriveEncoders();
-    state = ROTATE_TOWARD_GOAL;
-  }
-}
-void rotateTowardGoal() {
-  if (DriveToPos(4500,-4500,15,15)) {
-    ZeroDriveEncoders();
-    state = MOVE_TOWARD_GOAL;
-  }
-}
-void moveTowardGoal() {
-    if (DriveToPos(5000,5000,15,15)) {
-    ZeroDriveEncoders();
-    state = ROTATE_TOWARD_WALL;
-  }
-  
-}
-
 
 
 void loop() {
@@ -445,6 +448,7 @@ void loop() {
   }
     if (Serial1.available())
     {
+    Serial.println("AVAILABLE");
     char buff[50];
     String TEENSY = Serial1.readString();
     TEENSY.toCharArray(buff, 50);

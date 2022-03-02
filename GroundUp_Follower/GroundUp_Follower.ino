@@ -30,7 +30,7 @@ int RIGHT_ULTRASONIC = 0;
 void ultrasonicTimerPin(void) {
  if (PIN == LEFT) {
   LEFT_ULTRASONIC = sonar[0].ping_cm();
-  Serial.println(LEFT_ULTRASONIC);
+  //Serial.println(LEFT_ULTRASONIC);
   PIN = RIGHT;
  }
  else {
@@ -43,10 +43,10 @@ void timerISR(void) {
  timerFlag = true;
 }
  
-char buffer[20];
+char buffer[50];
  
 void setup() {
- Serial1.begin(28800);
+ Serial1.begin(9600);
  myTimer.begin(timerISR,Ts);
  UltrasonicTimer.begin(ultrasonicTimerPin,20000);
 }
@@ -57,5 +57,6 @@ void loop() {
    sprintf(buffer,"%d,%d,", LEFT_ULTRASONIC,RIGHT_ULTRASONIC);
    Serial1.write(buffer);
    Serial1.flush();
+   Serial.println(buffer);
  }
 }

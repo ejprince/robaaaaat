@@ -383,7 +383,7 @@ void moveTowardGoal() {
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
-  Serial1.begin(9600);
+  Serial1.begin(28800);
   while(!Serial1)
 
   EncVelTimer.begin(calcVelocity, ENC_SAMPLE_DUR);
@@ -448,13 +448,11 @@ void loop() {
   }
     if (Serial1.available())
     {
-    Serial.println("AVAILABLE");
+    Serial.println("available");
     char buff[50];
     String TEENSY = Serial1.readString();
     TEENSY.toCharArray(buff, 50);
     char* token = strtok(buff, ",");
-    float ultra1 = token[0];
-    float ultra2 = token[1];
     Serial.println(TEENSY);
     }
 }

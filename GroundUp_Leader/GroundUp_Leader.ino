@@ -1,5 +1,4 @@
 #include <PID_v1.h>
-
 #include <Encoder.h>
 
 /*MOTOR PINS*/
@@ -51,6 +50,12 @@
 #define ECHO_L 19  // attach pin D2 Arduino to pin Echo of HC-SR04
 #define ECHO_R 18 // attach pin D2 Arduino to pin Echo of HC-SR04
 //#define ECHO_F 17 // attach pin D2 Arduino to pin Echo of HC-SR04
+
+// LIMIT PINS
+#define U_LIM_1 
+#define U_LIM_2
+#define L_LIM_1
+#define L_LIM_2
 
 #define WALLFOLLOW_MAXTURN 20;
 
@@ -191,7 +196,7 @@ void runMotor(int motor, int dutyCycle){
 
 // 1e read lower limit
 bool LowerLimitPressed(){
-  
+  if (
 }
 
 bool UpperLimitPressed(){
@@ -242,17 +247,17 @@ void PosPID(int motor, int pos){
 }
 */
 
-bool DriveToPos(int LeftDist, int RightDist, int LeftVelocity, int RightVelocity){ // make sure the signs match! or fix later
+bool DriveToPos(int LeftDist, int RightDist, int LeftVelocity, int RightVelocity){ // direction in the sign of velocity; sign of dist does nothing
   ZeroDriveEncoders();
   bool LeftDone = false;
-  bool RightDone = true;
-  if (abs(getEncoderCounts(DRIVE_MOTOR_L)) < LeftDist){ 
+  bool RightDone = false;
+  if (abs(getEncoderCounts(DRIVE_MOTOR_L)) < abs(LeftDist)){ 
     VelPID(DRIVE_MOTOR_L, LeftVelocity);
   }else{
     runMotor(DRIVE_MOTOR_L, 0);
     LeftDone = true;
   }
-  if (abs(getEncoderCounts(DRIVE_MOTOR_R)) < RightDist){ 
+  if (abs(getEncoderCounts(DRIVE_MOTOR_R)) < abs(RightDist)){ 
     VelPID(DRIVE_MOTOR_R, RightVelocity);
   }else{
     runMotor(DRIVE_MOTOR_R, 0);
@@ -297,7 +302,10 @@ bool DriveStraight(int dist, int velocity){
 // 4b Turn Theta
 bool RotateTheta(int theta, int velocity){
   dist = 90_DEG_TURN_COUNTS * theta/90;
-  if(DriveToPos(dist, dist * -1, velocity, velocity)){
+  if(theta < 0){
+    velocity = -1 * velocity;
+  }
+  if(DriveToPos(dist, dist, velocity, -velocity)){
     return true;
   }else{
     return false;
@@ -309,6 +317,22 @@ bool RotateTheta(int theta, int velocity){
 
 void setup() {
   // put your setup code here, to run once:
+  Serial.begin(9600);
+  Serial1.begin(38400);
+  
+  pinMode(PWM_L, OUTPUT);
+  pinMode(L_D1, OUTPUT);
+  pinMode(L_D2, OUTPUT);
+ 
+  pinMode(PWM_R, OUTPUT);
+  pinMode(R_D1, OUTPUT);
+  pinMode(R_D2, OUTPUT);
+ 
+  pinMode(PWM_ROT, OUTPUT);
+  pinMode(ROT_D1, OUTPUT);
+  pinMode(ROT_D2, OUTPUT);
+
+  
   L_V_PID.SetMode(AUTOMATIC);
   L_V_PID.SetOutputLimits(-255,255);
   R_V_PID.SetMode(AUTOMATIC);
@@ -327,5 +351,15 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
+ if (Serial1.available())
+ {
+   String TEENSY = Serial1.readString();
+   upperLim = (TEENSY.substring(0,1)).toInt();
+   lowerLim = TEENSY.substring(2,3).toInt();
+   leftUltra = TEENSY.substring(4,8).toFloat();
+   rightUltra = TEENSY.substring(9,14).toFloat();
+   frontUltra = TEENSY.substring(15,20).toFloat();
+ }
+}
 
 }

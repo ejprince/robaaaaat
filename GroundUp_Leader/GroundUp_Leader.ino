@@ -336,10 +336,7 @@ typedef enum {
   REVERSE_ON_LINE, 
   ROTATE_TOWARD_WALL,
   MOVE_TOWARD_WALL, ROTATE_TOWARD_GOAL,
-  MOVE_TOWARD_GOAL,
-  REVERSE_FROM_GOAL,
-  ROTATE_TOWARD_LINE,
-  MOVE_TOWARD_LINE,
+  MOVE_TOWARD_GOAL,REACHED_GOAL,
 } STATE_MACHINE;
 
 STATE_MACHINE state;
@@ -351,28 +348,31 @@ void reverseOnLine() {
   } 
 }
 void rotateTowardWall() {
-  if (DriveToPos(-4500,4500,15,15)) {
+  if (DriveToPos(4250,4250,-15,15)) {
     ZeroDriveEncoders();
     state = MOVE_TOWARD_WALL;
   }
 }
 void moveTowardWall() {
-  if (DriveToPos(12500,12500,15,15)) {
+  if (DriveToPos(14000,1400,-15,-15)) {
     ZeroDriveEncoders();
     state = ROTATE_TOWARD_GOAL;
   }
 }
 void rotateTowardGoal() {
-  if (DriveToPos(4500,-4500,15,15)) {
+  if (DriveToPos(4500,4500,15,-15)) {
     ZeroDriveEncoders();
     state = MOVE_TOWARD_GOAL;
   }
 }
 void moveTowardGoal() {
-    if (DriveToPos(5000,5000,15,15)) {
+    if (DriveToPos(14000,14000,15,15)) {
     ZeroDriveEncoders();
-    state = ROTATE_TOWARD_WALL;
+    state = REACHED_GOAL;
   }
+}
+
+void reachedGoal() {
   
 }
 
@@ -381,8 +381,7 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
   Serial1.begin(9600);
-  while(!Serial1)
-
+  
   EncVelTimer.begin(calcVelocity, ENC_SAMPLE_DUR);
   pinMode(PWM_L, OUTPUT);
   pinMode(L_D1, OUTPUT);
@@ -416,13 +415,11 @@ void setup() {
   Wall_PID.SetOutputLimits(-WALLFOLLOW_MAXTURN, WALLFOLLOW_MAXTURN);
   ZeroDriveEncoders();
   state = REVERSE_ON_LINE;
-
 }
 
 
 
 void loop() {
-
   switch (state) {
     case REVERSE_ON_LINE:
       reverseOnLine();
@@ -439,15 +436,18 @@ void loop() {
     case MOVE_TOWARD_GOAL:
       moveTowardGoal();
       break;
+    case REACHED_GOAL:
+      reachedGoal();
+      break;
     default:    // Should never get into an unhandled state
       Serial.println("What is this I do not even...");
   }
-    if (Serial1.available())
-    {
-    char buff[50];
-    String TEENSY = Serial1.readString();
-    TEENSY.toCharArray(buff, 50);
-    Serial.println(buff);
-    char* token = strtok(buff, ",");
-    }
-}
+//    if (Serial1.available())
+//    {
+//    char buff[50];
+//    String TEENSY = Serial1.readString();
+//    TEENSY.toCharArray(buff, 50);
+//    Serial.print(buff);
+//    char* token = strtok(buff, ","); }
+
+  }

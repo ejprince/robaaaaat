@@ -1,7 +1,6 @@
 #include <PID_v1.h>
 #include <Encoder.h>
 
-/*MOTOR PINS*/
 
 #define LEFT_SIDE -1
 #define RIGHT_SIDE 1
@@ -11,39 +10,41 @@
 #define DRIVE_MOTOR_R 2
 #define ARM_MOTOR 3
 #define INTAKE_MOTOR 4
+
+/*MOTOR PINS*/
  
 // CONVEYOR MOTOR
 #define PWM_INT 11
-#define INT_D1 12
-#define INT_D2 13
+#define INT_D1 18
+#define INT_D2 12
  
 // ARM MOTOR
 #define PWM_ROT 8
-#define ROT_D1 9
-#define ROT_D2 10
+#define ROT_D1 10
+#define ROT_D2 9
  
 // ARM MOTOR ENCODER
 //CHECK
-#define ROTEA 15
-#define ROTEB 16
+#define ROTEA 16
+#define ROTEB 15
  
 // LEFT WHEEL MOTOR
-#define PWM_L 7
-#define L_D1 6
-#define L_D2 5
+#define PWM_L 2
+#define L_D1 4
+#define L_D2 3
  
 // LEFT WHEEL ENCODER
-#define LEA 21
-#define LEB 17
+#define LEA 22
+#define LEB 23
  
 // RIGHT WHEEL MOTOR
-#define PWM_R 2
-#define R_D1 3
-#define R_D2 4
+#define PWM_R 7
+#define R_D1 5
+#define R_D2 6
  
 // RIGHT WHEEL ENCODER
-#define REA  23
-#define REB  22
+#define REA  17
+#define REB  21
  
 // ULTRASONIC PINS
 #define TRIGGER 20 // attach pin D3 Arduino to pin Trig of HC-SR04
@@ -57,7 +58,7 @@
 #define L_LIM_1
 #define L_LIM_2
 
-#define WALLFOLLOW_MAXTURN 20;
+#define WALLFOLLOW_MAXTURN 20
 
 
 
@@ -77,7 +78,7 @@ int COUNTER_TIMER_R_OLD = 0;
 
 #define MAX_DRIVE_SPEED_RPM 100
 
-#define 90_DEG_TURN_COUNTS
+#define NINETY_DEG_TURN_COUNTS 0
 
 double LMotorV, RMotorV, LMotorDC, RMotorDC, LMotorVSet, RMotorVSet;
 
@@ -116,7 +117,13 @@ PID L_P_PID(&LMotorPos, &LMotorDesV, &LMotorPosSet, LPKp, LPKi, LPKd, DIRECT);
 PID R_P_PID(&RMotorPos, &RMotorDesV, &RMotorPosSet, RPKp, RPKi, RPKd, DIRECT);
 PID Arm_P_PID(&ArmMotorPos, &ArmMotorDC, &ArmMotorPosSet, ArmPKp, ArmPKi, ArmPKd, DIRECT);
 
-PID Wall_PID(&WallDist, &TurnAmount, &WallDistSet, WallKp, WallKi, WallKd);
+PID Wall_PID(&WallDist, &TurnAmount, &WallDistSet, WallKp, WallKi, WallKd, DIRECT);
+
+int upperLim;
+int lowerLim;
+int leftUltra;
+int rightUltra;
+int frontUltra;
 
 /*--------------Level 1 Functions--------------*/
 // 1a Get Velocity
@@ -127,13 +134,13 @@ float getVelocity(int motor){
     int CounterTimerL = millis()-COUNTER_TIMER_L_OLD;
     COUNTER_TIMER_L_OLD = millis();
     COUNTER_L_OLD = ENCODER_L.read();
-    RPM = ((CounterL * 60) / (PULSES_PER_REVOLUTION)) / (CounterTimerL * (1/1000) * DRIVE_GEAR_RATIO);
+    RPM = ((CounterL * 60) / (PULSES_PER_REVOLUTION)) / (CounterTimerL * (0.001) * DRIVE_GEAR_RATIO);
   } else if (motor == DRIVE_MOTOR_R){
     int CounterR = ENCODER_R.read()-COUNTER_R_OLD;
     int CounterTimerR = millis()-COUNTER_TIMER_R_OLD;
     COUNTER_TIMER_R_OLD = millis();
     COUNTER_R_OLD = ENCODER_R.read();
-    RPM = ((CounterR * 60) / (PULSES_PER_REVOLUTION)) / (CounterTimerR * (1/1000) * DRIVE_GEAR_RATIO);
+    RPM = ((CounterR * 60) / (PULSES_PER_REVOLUTION)) / (CounterTimerR * (0.001) * DRIVE_GEAR_RATIO);
   }
   return RPM;
 }
@@ -193,10 +200,13 @@ void runMotor(int motor, int dutyCycle){
 
 // 1d Read Ultra
 // TBD
+int SenseUltra(int side){
+  return 0;
+}
 
 // 1e read lower limit
 bool LowerLimitPressed(){
-  if (
+  //if (
 }
 
 bool UpperLimitPressed(){
@@ -271,10 +281,10 @@ bool DriveToPos(int LeftDist, int RightDist, int LeftVelocity, int RightVelocity
 }
 
 void ArmPID(int pos){
-  ArmMotorPos = getEncoderCounts(motor);
+  ArmMotorPos = getEncoderCounts(ARM_MOTOR);
   Arm_P_PID.Compute();
   if ((ArmMotorDC < 0 && !(LowerLimitPressed())) || (ArmMotorDC > 0 && !(UpperLimitPressed()))){
-    runMotor(motor, ArmMotorDC);
+    runMotor(ARM_MOTOR, ArmMotorDC);
   }
 }
 
@@ -301,7 +311,7 @@ bool DriveStraight(int dist, int velocity){
 }
 // 4b Turn Theta
 bool RotateTheta(int theta, int velocity){
-  dist = 90_DEG_TURN_COUNTS * theta/90;
+  int dist = NINETY_DEG_TURN_COUNTS * theta/90;
   if(theta < 0){
     velocity = -1 * velocity;
   }
@@ -347,10 +357,12 @@ void setup() {
   
   Wall_PID.SetMode(AUTOMATIC);
   Wall_PID.SetOutputLimits(-WALLFOLLOW_MAXTURN, WALLFOLLOW_MAXTURN);
+  
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
+  /*
  if (Serial1.available())
  {
    String TEENSY = Serial1.readString();
@@ -359,7 +371,6 @@ void loop() {
    leftUltra = TEENSY.substring(4,8).toFloat();
    rightUltra = TEENSY.substring(9,14).toFloat();
    frontUltra = TEENSY.substring(15,20).toFloat();
- }
-}
+ }*/
 
 }

@@ -12,40 +12,40 @@
 #define INTAKE_MOTOR 4
 
 /*MOTOR PINS*/
- 
+
 // CONVEYOR MOTOR
 #define PWM_INT 11
 #define INT_D1 18
 #define INT_D2 12
- 
+
 // ARM MOTOR
 #define PWM_ROT 8
 #define ROT_D1 10
 #define ROT_D2 9
- 
+
 // ARM MOTOR ENCODER
 //CHECK
 #define ROTEA 16
 #define ROTEB 15
- 
+
 // LEFT WHEEL MOTOR
 #define PWM_L 2
 #define L_D1 4
 #define L_D2 3
- 
+
 // LEFT WHEEL ENCODER
 #define LEA 22
 #define LEB 23
- 
+
 // RIGHT WHEEL MOTOR
 #define PWM_R 7
 #define R_D1 5
 #define R_D2 6
- 
+
 // RIGHT WHEEL ENCODER
 #define REA  17
 #define REB  21
- 
+
 // ULTRASONIC PINS
 #define TRIGGER 20 // attach pin D3 Arduino to pin Trig of HC-SR04
 #define ECHO_L 19  // attach pin D2 Arduino to pin Echo of HC-SR04
@@ -53,7 +53,7 @@
 //#define ECHO_F 17 // attach pin D2 Arduino to pin Echo of HC-SR04
 
 // LIMIT PINS
-#define U_LIM_1 
+#define U_LIM_1
 #define U_LIM_2
 #define L_LIM_1
 #define L_LIM_2
@@ -62,9 +62,9 @@
 
 
 
-Encoder ENCODER_R(REA,REB);
-Encoder ENCODER_L(LEA,LEB);
-Encoder ENCODER_ARM(ROTEA,ROTEB);
+Encoder ENCODER_R(REA, REB);
+Encoder ENCODER_L(LEA, LEB);
+Encoder ENCODER_ARM(ROTEA, ROTEB);
 
 int COUNTER_L_OLD = 0;
 int COUNTER_R_OLD = 0;
@@ -133,69 +133,69 @@ IntervalTimer EncVelTimer;
 
 /*--------------Level 1 Functions--------------*/
 // 1a Get Velocity
-void calcVelocity(){
-    int CounterL = ENCODER_L.read()-COUNTER_L_OLD;
-    COUNTER_L_OLD = ENCODER_L.read();
-    LMotorVel = ((CounterL * 60) / (PULSES_PER_REVOLUTION)) / (ENC_SAMPLE_DUR * (0.000001) * DRIVE_GEAR_RATIO);
-    int CounterR = ENCODER_R.read()-COUNTER_R_OLD;
-    COUNTER_R_OLD = ENCODER_R.read();
-    RMotorVel = ((CounterR * 60) / (PULSES_PER_REVOLUTION)) / (ENC_SAMPLE_DUR * (0.000001) * DRIVE_GEAR_RATIO);
+void calcVelocity() {
+  int CounterL = ENCODER_L.read() - COUNTER_L_OLD;
+  COUNTER_L_OLD = ENCODER_L.read();
+  LMotorVel = ((CounterL * 60) / (PULSES_PER_REVOLUTION)) / (ENC_SAMPLE_DUR * (0.000001) * DRIVE_GEAR_RATIO);
+  int CounterR = ENCODER_R.read() - COUNTER_R_OLD;
+  COUNTER_R_OLD = ENCODER_R.read();
+  RMotorVel = ((CounterR * 60) / (PULSES_PER_REVOLUTION)) / (ENC_SAMPLE_DUR * (0.000001) * DRIVE_GEAR_RATIO);
 }
 
-double getVelocity(int motor){
-  if (motor == DRIVE_MOTOR_L){
+double getVelocity(int motor) {
+  if (motor == DRIVE_MOTOR_L) {
     return LMotorVel;
-  } else if (motor == DRIVE_MOTOR_R){
+  } else if (motor == DRIVE_MOTOR_R) {
     return RMotorVel;
   }
 }
 
 // 1b Get Encoder Counts
-int getEncoderCounts(int motor){
+int getEncoderCounts(int motor) {
   int counts = 0;
-  if (motor == DRIVE_MOTOR_L){
+  if (motor == DRIVE_MOTOR_L) {
     counts = ENCODER_L.read();
-  } else if (motor == DRIVE_MOTOR_R){
+  } else if (motor == DRIVE_MOTOR_R) {
     counts = ENCODER_R.read();
-  } else if (motor == ARM_MOTOR){
+  } else if (motor == ARM_MOTOR) {
     counts = ENCODER_ARM.read();
   }
   return counts;
 }
 
 // 1c Run Motor
-void runMotor(int motor, int dutyCycle){
+void runMotor(int motor, int dutyCycle) {
   int pin1;
   int pin2;
   int pwmPin;
   int dir = 1;
-  if (dutyCycle < 0){
+  if (dutyCycle < 0) {
     dir = -1;
   }
   dutyCycle = abs(dutyCycle);
-  
-  if (motor == DRIVE_MOTOR_L){
+
+  if (motor == DRIVE_MOTOR_L) {
     pin1 = L_D1;
     pin2 = L_D2;
-    pwmPin = PWM_L;    
-  } else if (motor == DRIVE_MOTOR_R){
+    pwmPin = PWM_L;
+  } else if (motor == DRIVE_MOTOR_R) {
     pin1 = R_D1;
     pin2 = R_D2;
-    pwmPin = PWM_R;    
-  } else if (motor == ARM_MOTOR){
+    pwmPin = PWM_R;
+  } else if (motor == ARM_MOTOR) {
     pin1 = ROT_D1;
     pin2 = ROT_D2;
-    pwmPin = PWM_ROT;    
-  } else if (motor == INTAKE_MOTOR){
+    pwmPin = PWM_ROT;
+  } else if (motor == INTAKE_MOTOR) {
     pin1 = INT_D1;
     pin2 = INT_D2;
-    pwmPin = PWM_INT;    
+    pwmPin = PWM_INT;
   }
 
-  if (dir == 1){
+  if (dir == 1) {
     digitalWrite(pin1, LOW);
     digitalWrite(pin2, HIGH);
-  } else if (dir == -1){
+  } else if (dir == -1) {
     digitalWrite(pin1, HIGH);
     digitalWrite(pin2, LOW);
   }
@@ -205,39 +205,39 @@ void runMotor(int motor, int dutyCycle){
 
 // 1d Read Ultra
 // TBD
-int SenseUltra(int side){
+int SenseUltra(int side) {
   return 0;
 }
 
 // 1e read lower limit
-bool LowerLimitPressed(){
+bool LowerLimitPressed() {
   //if (
 }
 
-bool UpperLimitPressed(){
-  
+bool UpperLimitPressed() {
+
 }
 
-bool ZeroDriveEncoders(){
+bool ZeroDriveEncoders() {
   ENCODER_L.write(0);
   ENCODER_R.write(0);
 }
 
 /*--------------Level 2 Functions--------------*/
 // 2a Take
-void Take(int dir){
+void Take(int dir) {
   runMotor(INTAKE_MOTOR, dir * INTAKE_SPEED);
 }
 
 // 2b Velocity PID
-void VelPID(int motor, int velocity){
-  int dir = velocity/abs(velocity);
-  if (motor == DRIVE_MOTOR_L){
+void VelPID(int motor, int velocity) {
+  int dir = velocity / abs(velocity);
+  if (motor == DRIVE_MOTOR_L) {
     LMotorV = abs(getVelocity(motor));
     LMotorVSet = abs(velocity);
     L_V_PID.Compute();
     runMotor(motor, dir * LMotorDC);
-  } else if (motor == DRIVE_MOTOR_R){
+  } else if (motor == DRIVE_MOTOR_R) {
     RMotorV = abs(getVelocity(motor));
     RMotorVSet = abs(velocity);
     R_V_PID.Compute();
@@ -249,7 +249,7 @@ void VelPID(int motor, int velocity){
 /*--------------Level 3 Functions--------------*/
 // 3a Drive straight
 /*
-void PosPID(int motor, int pos){
+  void PosPID(int motor, int pos){
   if (motor == DRIVE_MOTOR_L){
     LMotorPos = getEncoderCounts(motor);
     L_P_PID.Compute();
@@ -263,36 +263,36 @@ void PosPID(int motor, int pos){
     Arm_P_PID.Compute();
     runMotor(motor, ArmMotorDC);
   }
-}
+  }
 */
 
-bool DriveToPos(int LeftDist, int RightDist, int LeftVelocity, int RightVelocity){ // direction in the sign of velocity; sign of dist does nothing
+bool DriveToPos(int LeftDist, int RightDist, int LeftVelocity, int RightVelocity) { // direction in the sign of velocity; sign of dist does nothing
   bool LeftDone = false;
   bool RightDone = false;
-  if (abs(getEncoderCounts(DRIVE_MOTOR_L)) < abs(LeftDist)){ 
+  if (abs(getEncoderCounts(DRIVE_MOTOR_L)) < abs(LeftDist)) {
     VelPID(DRIVE_MOTOR_L, LeftVelocity);
-  }else{
+  } else {
     runMotor(DRIVE_MOTOR_L, 0);
     LeftDone = true;
   }
-  if (abs(getEncoderCounts(DRIVE_MOTOR_R)) < abs(RightDist)){ 
+  if (abs(getEncoderCounts(DRIVE_MOTOR_R)) < abs(RightDist)) {
     VelPID(DRIVE_MOTOR_R, RightVelocity);
-  }else{
+  } else {
     runMotor(DRIVE_MOTOR_R, 0);
     RightDone = true;
   }
-  if (LeftDone && RightDone){
+  if (LeftDone && RightDone) {
     return true;
-  }else{
+  } else {
     return false;
   }
 }
 
-void ArmPID(int pos){
+void ArmPID(int pos) {
   ArmMotorPos = getEncoderCounts(ARM_MOTOR);
   ArmMotorPosSet = pos;
   Arm_P_PID.Compute();
-  if ((ArmMotorDC < 0 && !(LowerLimitPressed())) || (ArmMotorDC > 0 && !(UpperLimitPressed()))){
+  if ((ArmMotorDC < 0 && !(LowerLimitPressed())) || (ArmMotorDC > 0 && !(UpperLimitPressed()))) {
     runMotor(ARM_MOTOR, ArmMotorDC);
   }
   Serial.print(ArmMotorPos); Serial.print(" ");
@@ -300,41 +300,51 @@ void ArmPID(int pos){
 }
 
 // 3b Follow Wall
-void FollowWall(int side, int AvgVel, int WallDistSetPoint){
+void FollowWall(int side, int AvgVel, int WallDistSetPoint) {
   WallDist = SenseUltra(side);
   WallDistSet = WallDistSetPoint;
   Wall_PID.Compute();
   int TurnAmountGeneral = TurnAmount * side;
-  int LVel = AvgVel - TurnAmountGeneral/2;
-  int RVel = AvgVel + TurnAmountGeneral/2;
+  int LVel = AvgVel - TurnAmountGeneral / 2;
+  int RVel = AvgVel + TurnAmountGeneral / 2;
   VelPID(DRIVE_MOTOR_L, LVel);
   VelPID(DRIVE_MOTOR_R, RVel);
 }
 
 /*--------------Level 4 Functions--------------*/
 // 4a Drive Straight
-bool DriveStraight(int dist, int velocity){
-  if(DriveToPos(dist, dist, velocity, velocity)){
+bool DriveStraight(int dist, int velocity) {
+  if (DriveToPos(dist, dist, velocity, velocity)) {
     return true;
-  }else{
+  } else {
     return false;
   }
 }
 // 4b Turn Theta
-bool RotateTheta(int theta, int velocity){
-  int dist = NINETY_DEG_TURN_COUNTS * theta/90;
-  if(theta < 0){
+bool RotateTheta(int theta, int velocity) {
+  int dist = NINETY_DEG_TURN_COUNTS * theta / 90;
+  if (theta < 0) {
     velocity = -1 * velocity;
   }
-  if(DriveToPos(dist, dist, velocity, -velocity)){
+  if (DriveToPos(dist, dist, velocity, -velocity)) {
     return true;
-  }else{
+  } else {
     return false;
   }
 }
 
 
+typedef enum {
+  REVERSE_ON_LINE, 
+  ROTATE_TOWARD_WALL,
+  MOVE_TOWARD_WALL, ROTATE_TOWARD_GOAL,
+  MOVE_TOWARD_GOAL,
+  REVERSE_FROM_GOAL,
+  ROTATE_TOWARD_LINE,
+  MOVE_TOWARD_LINE,
+} STATE_MACHINE;
 
+STATE_MACHINE state;
 
 void setup() {
   // put your setup code here, to run once:
@@ -342,25 +352,25 @@ void setup() {
   Serial1.begin(38400);
 
   EncVelTimer.begin(calcVelocity, ENC_SAMPLE_DUR);
-  
+
   pinMode(PWM_L, OUTPUT);
   pinMode(L_D1, OUTPUT);
   pinMode(L_D2, OUTPUT);
- 
+
   pinMode(PWM_R, OUTPUT);
   pinMode(R_D1, OUTPUT);
   pinMode(R_D2, OUTPUT);
- 
+
   pinMode(PWM_ROT, OUTPUT);
   pinMode(ROT_D1, OUTPUT);
   pinMode(ROT_D2, OUTPUT);
 
-  
+
   L_V_PID.SetMode(AUTOMATIC);
-  L_V_PID.SetOutputLimits(0,255);
-  L_V_PID.SetSampleTime(50); 
+  L_V_PID.SetOutputLimits(0, 255);
+  L_V_PID.SetSampleTime(50);
   R_V_PID.SetMode(AUTOMATIC);
-  R_V_PID.SetOutputLimits(0,255);
+  R_V_PID.SetOutputLimits(0, 255);
   R_V_PID.SetSampleTime(50);
 
   L_P_PID.SetMode(AUTOMATIC);
@@ -370,30 +380,74 @@ void setup() {
   Arm_P_PID.SetMode(AUTOMATIC);
   Arm_P_PID.SetOutputLimits(-255, 255);
   Arm_P_PID.SetSampleTime(50);
-  
+
   Wall_PID.SetMode(AUTOMATIC);
   Wall_PID.SetOutputLimits(-WALLFOLLOW_MAXTURN, WALLFOLLOW_MAXTURN);
-  delay(1000);
   ZeroDriveEncoders();
-  while(!RotateTheta(90,10)){
-    delay(1);
+  state = REVERSE_ON_LINE;
+
+}
+
+void reverseOnLine() {
+    if (DriveToPos(5000,5000,15,15)) {
+    ZeroDriveEncoders();
+    state = ROTATE_TOWARD_WALL;
+  } 
+}
+void rotateTowardWall() {
+  if (DriveToPos(-4500,4500,15,15)) {
+    ZeroDriveEncoders();
+    state = MOVE_TOWARD_WALL;
+  }
+}
+void moveTowardWall() {
+  if (DriveToPos(12500,12500,15,15)) {
+    ZeroDriveEncoders();
+    state = ROTATE_TOWARD_GOAL;
+  }
+}
+void rotateTowardGoal() {
+  if (DriveToPos(4500,-4500,15,15)) {
+    ZeroDriveEncoders();
+    state = MOVE_TOWARD_GOAL;
+  }
+}
+void moveTowardGoal() {
+    if (DriveToPos(5000,5000,15,15)) {
+    ZeroDriveEncoders();
+    state = ROTATE_TOWARD_WALL;
   }
   
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
-  /*
- if (Serial1.available())
- {
-   String TEENSY = Serial1.readString();
-   upperLim = (TEENSY.substring(0,1)).toInt();
-   lowerLim = TEENSY.substring(2,3).toInt();
-   leftUltra = TEENSY.substring(4,8).toFloat();
-   rightUltra = TEENSY.substring(9,14).toFloat();
-   frontUltra = TEENSY.substring(15,20).toFloat();
- }*/
- 
- delay(1);
 
+
+void loop() {
+
+  switch (state) {
+    case REVERSE_ON_LINE:
+      reverseOnLine();
+      break;
+    case ROTATE_TOWARD_WALL:
+      rotateTowardWall();
+      break;
+    case MOVE_TOWARD_WALL:
+      moveTowardWall();
+      break;
+    case ROTATE_TOWARD_GOAL:
+      rotateTowardGoal();
+      break;
+    case MOVE_TOWARD_GOAL:
+      moveTowardGoal();
+      break;
+    default:    // Should never get into an unhandled state
+      Serial.println("What is this I do not even...");
+  }
+    if (Serial1.available())
+    {
+    char buff[50];
+    String TEENSY = Serial1.readString();
+    
+
+    }*/
 }

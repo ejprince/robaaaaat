@@ -383,7 +383,7 @@ void moveTowardGoal() {
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
-  Serial1.begin(28800);
+  Serial1.begin(9600);
   while(!Serial1)
 
   EncVelTimer.begin(calcVelocity, ENC_SAMPLE_DUR);

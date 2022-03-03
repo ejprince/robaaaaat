@@ -43,7 +43,7 @@ void timerISR(void) {
  timerFlag = true;
 }
  
-char buffer[50];
+char buffer[10];
  
 void setup() {
  Serial1.begin(9600);
@@ -51,11 +51,11 @@ void setup() {
  UltrasonicTimer.begin(ultrasonicTimerPin,20000);
 }
  
-void loop() {
+void loop() { 
   if(timerFlag) {
    timerFlag = false;
    sprintf(buffer,"%d,%d,", LEFT_ULTRASONIC,RIGHT_ULTRASONIC);
-   Serial1.write(buffer);
+   Serial1.write(LEFT_ULTRASONIC);
    Serial1.flush();
    Serial.println(buffer);
  }

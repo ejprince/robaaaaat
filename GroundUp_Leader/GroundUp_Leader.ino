@@ -375,7 +375,7 @@ void rotateTowardWall() {
   }
 }
 void moveTowardWall() {
-  if (DriveToPos(15250, 15250, 20, 20)) {
+  if (DriveToPos(15000, 15000, 20, 20)) {
     ZeroDriveEncoders();
     state = ROTATE_TOWARD_GOAL;
   }
@@ -387,7 +387,7 @@ void rotateTowardGoal() {
   }
 }
 void moveTowardGoal() {
-  if (DriveToPos(12000, 12000, 40, 40)) {
+  if (DriveToPos(12000, 12000, 30, 30)) {
     ZeroDriveEncoders();
     state = REACHED_GOAL;
   }

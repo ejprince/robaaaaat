@@ -50,10 +50,8 @@ IntervalTimer UltrasonicTimer;
 #define ECHO_L 20  // attach pin D2 Arduino to pin Echo of HC-SR04
 
 // LIMIT PINS
-#define U_LIM_1
-#define U_LIM_2
-#define L_LIM_1
-#define L_LIM_2
+// #define U_LIM_1
+#define L_LIM 0 
 
 #define WALLFOLLOW_MAXTURN 20
 
@@ -96,8 +94,8 @@ double RPKp = 1;
 double RPKi = 0;
 double RPKd = 0;
 
-double ArmPKp = 0.5;
-double ArmPKi = 0.1;
+double ArmPKp = 0.8;
+double ArmPKi = 0.2;
 double ArmPKd = 0.1;
 
 double WallDist, TurnAmount, WallDistSet;
@@ -221,11 +219,15 @@ int SenseUltra(int side) {
 
 // 1e read lower limit
 bool LowerLimitPressed() {
-  //if (
+  if (digitalRead(L_LIM) == HIGH){
+    return true;
+  } else {
+    return false;
+  }
 }
 
 bool UpperLimitPressed() {
-
+  return false;
 }
 
 bool ZeroDriveEncoders() {
@@ -305,7 +307,6 @@ void ArmPID(int pos) {
   if ((ArmMotorDC < 0 && !(LowerLimitPressed())) || (ArmMotorDC > 0 && !(UpperLimitPressed()))) {
     runMotor(ARM_MOTOR, ArmMotorDC);
   }
-  Serial.print(ArmMotorPos); Serial.print(" ");
   Serial.println(ArmMotorDC);
 }
 
@@ -354,13 +355,42 @@ bool RotateTheta(int theta, int velocity) {
 
 
 typedef enum {
+  HOMING,INTAKE, STOP_LOADING,
   REVERSE_ON_LINE,
   ROTATE_TOWARD_WALL,
   MOVE_TOWARD_WALL, ROTATE_TOWARD_GOAL,
-  MOVE_TOWARD_GOAL, REACHED_GOAL, COMPLETE
+  MOVE_TOWARD_GOAL, REACHED_GOAL, 
+  RAISE_ARM, OUTTAKE,FINAL_HOME,
+  COMPLETE
 } STATE_MACHINE;
 
 STATE_MACHINE state;
+
+void homeArm(){
+  if (!LowerLimitPressed()){
+    runMotor(ARM_MOTOR, -200);
+  } else {
+    runMotor(ARM_MOTOR, 0);
+    ENCODER_ARM.write(0);
+    state = INTAKE;
+  }
+}
+
+void intake(){
+  Take(1);
+  if (DriveToPos(3700, 3700, -20, -20)){
+    ZeroDriveEncoders();
+    state = STOP_LOADING;
+  }
+}
+
+void stopLoading(){
+  Take(0);
+  if (DriveToPos(3300, 3300, 20, 20)){
+    ZeroDriveEncoders();
+    state = REVERSE_ON_LINE;
+  }
+}
 
 void reverseOnLine() {
   if (DriveToPos(26500, 26500, 30, 30)) {
@@ -396,8 +426,36 @@ void moveTowardGoal() {
 void reachedGoal() {
     if (DriveToPos(100, 100, -20, -20)) {
     ZeroDriveEncoders();
-    state = COMPLETE;
+    state = RAISE_ARM;
+  }
 }
+
+void raiseArm(){
+  int targetPos = 3800;
+  int error = 50;
+  if (!(abs(getEncoderCounts(ARM_MOTOR) - targetPos) <= error)){
+    ArmPID(targetPos);
+  } else {
+    runMotor(ARM_MOTOR, 0);
+    state = OUTTAKE;
+  }
+}
+
+void outtake(){
+  Take(-1);
+  delay(5000);
+  Take(0);
+  state = FINAL_HOME;
+}
+
+void finalHome(){
+    if (!LowerLimitPressed()){
+    runMotor(ARM_MOTOR, -200);
+  } else {
+    runMotor(ARM_MOTOR, 0);
+    ENCODER_ARM.write(0);
+    state = COMPLETE;
+  }
 }
 
 void ultrasonicTimerPin(void) {
@@ -430,6 +488,8 @@ void setup() {
   pinMode(ROT_D1, OUTPUT);
   pinMode(ROT_D2, OUTPUT);
 
+  pinMode(L_LIM, INPUT_PULLUP);
+
   pinMode(TRIGGER, OUTPUT); // Sets the trigPin as an OUTPUT
   pinMode(ECHO_L, INPUT); // Sets the echoPin as an INPUT
 
@@ -451,13 +511,22 @@ void setup() {
   Wall_PID.SetMode(AUTOMATIC);
   Wall_PID.SetOutputLimits(-WALLFOLLOW_MAXTURN, WALLFOLLOW_MAXTURN);
   ZeroDriveEncoders();
-  state = REVERSE_ON_LINE;
+  state = HOMING;
 }
 
 
 
 void loop() {
     switch (state) {
+      case HOMING:
+        homeArm();
+        break;
+      case INTAKE:
+        intake();
+        break;
+      case STOP_LOADING:
+        stopLoading();
+        break;
       case REVERSE_ON_LINE:
         reverseOnLine();
         break;
@@ -475,6 +544,15 @@ void loop() {
         break;
       case REACHED_GOAL:
         reachedGoal();
+        break;
+      case RAISE_ARM:
+        raiseArm();
+        break;
+      case OUTTAKE:
+        outtake();
+        break;
+      case FINAL_HOME:
+        finalHome();
         break;
       case COMPLETE:
         break;

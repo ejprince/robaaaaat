@@ -9,6 +9,7 @@
 #define ARM_MOTOR 3
 #define INTAKE_MOTOR 4
 
+IntervalTimer UltrasonicTimer;
 /*MOTOR PINS*/
 
 // CONVEYOR MOTOR
@@ -45,10 +46,8 @@
 #define REB  21
 
 // ULTRASONIC PINS
-#define TRIGGER 20 // attach pin D3 Arduino to pin Trig of HC-SR04
-#define ECHO_L 19  // attach pin D2 Arduino to pin Echo of HC-SR04
-#define ECHO_R 18 // attach pin D2 Arduino to pin Echo of HC-SR04
-//#define ECHO_F 17 // attach pin D2 Arduino to pin Echo of HC-SR04
+#define TRIGGER 19 // attach pin D3 Arduino to pin Trig of HC-SR04
+#define ECHO_L 20  // attach pin D2 Arduino to pin Echo of HC-SR04
 
 // LIMIT PINS
 #define U_LIM_1
@@ -57,8 +56,6 @@
 #define L_LIM_2
 
 #define WALLFOLLOW_MAXTURN 20
-
-
 
 Encoder ENCODER_R(REA, REB);
 Encoder ENCODER_L(LEA, LEB);
@@ -104,8 +101,8 @@ double ArmPKi = 0.1;
 double ArmPKd = 0.1;
 
 double WallDist, TurnAmount, WallDistSet;
-double WallKp = 1;
-double WallKi = 0;
+double WallKp = 0.15;
+double WallKi = 0.000;
 double WallKd = 0;
 
 PID L_V_PID(&LMotorV, &LMotorDC, &LMotorVSet, LVKp, LVKi, LVKd, DIRECT);
@@ -117,17 +114,22 @@ PID Arm_P_PID(&ArmMotorPos, &ArmMotorDC, &ArmMotorPosSet, ArmPKp, ArmPKi, ArmPKd
 
 PID Wall_PID(&WallDist, &TurnAmount, &WallDistSet, WallKp, WallKi, WallKd, DIRECT);
 
+int RIGHT = 0;
+int LEFT = 1;
+int FRONT = 2;
+
 int upperLim;
 int lowerLim;
-int leftUltra;
-int rightUltra;
-int frontUltra;
+int Ultra_L;
+int Ultra_R;
+int Ultra_F;
 
 double LMotorVel;
 double RMotorVel;
 
 IntervalTimer EncVelTimer;
 #define ENC_SAMPLE_DUR 5000
+#define ULTRASONIC_TIMER 10000
 
 /*--------------Level 1 Functions--------------*/
 // 1a Get Velocity
@@ -139,6 +141,7 @@ void calcVelocity() {
   COUNTER_R_OLD = ENCODER_R.read();
   RMotorVel = ((CounterR * 60) / (PULSES_PER_REVOLUTION)) / (ENC_SAMPLE_DUR * (0.000001) * DRIVE_GEAR_RATIO);
 }
+
 
 double getVelocity(int motor) {
   if (motor == DRIVE_MOTOR_L) {
@@ -204,7 +207,16 @@ void runMotor(int motor, int dutyCycle) {
 // 1d Read Ultra
 // TBD
 int SenseUltra(int side) {
-  return 0;
+  if (side == RIGHT) {
+    return Ultra_R;
+  }
+  if (side == LEFT) {
+    return Ultra_L;
+
+  }
+  if (side == FRONT) {
+    return Ultra_F;
+  }
 }
 
 // 1e read lower limit
@@ -299,12 +311,21 @@ void ArmPID(int pos) {
 
 // 3b Follow Wall
 void FollowWall(int side, int AvgVel, int WallDistSetPoint) {
-  WallDist = SenseUltra(side);
+  Serial.println("Ultra_L");
+  Serial.println(Ultra_L);
+  Serial.println("WallDistSetPoint");
+  Serial.println(WallDistSetPoint);
+  //Serial.println("WallDist");
+  //  Serial.println(WallDist);
+  //  Serial.println(Ultra_L);
+  //  Serial.println(Ultra_R);
   WallDistSet = WallDistSetPoint;
   Wall_PID.Compute();
+  Serial.println("TurnAmount");
+  Serial.println(TurnAmount);
   int TurnAmountGeneral = TurnAmount * side;
-  int LVel = AvgVel - TurnAmountGeneral / 2;
-  int RVel = AvgVel + TurnAmountGeneral / 2;
+  int LVel = AvgVel + TurnAmount;
+  int RVel = AvgVel;
   VelPID(DRIVE_MOTOR_L, LVel);
   VelPID(DRIVE_MOTOR_R, RVel);
 }
@@ -333,56 +354,70 @@ bool RotateTheta(int theta, int velocity) {
 
 
 typedef enum {
-  REVERSE_ON_LINE, 
+  REVERSE_ON_LINE,
   ROTATE_TOWARD_WALL,
   MOVE_TOWARD_WALL, ROTATE_TOWARD_GOAL,
-  MOVE_TOWARD_GOAL,REACHED_GOAL,
+  MOVE_TOWARD_GOAL, REACHED_GOAL, COMPLETE
 } STATE_MACHINE;
 
 STATE_MACHINE state;
 
 void reverseOnLine() {
-    if (DriveToPos(5000,5000,15,15)) {
+  if (DriveToPos(26500, 26500, 30, 30)) {
     ZeroDriveEncoders();
     state = ROTATE_TOWARD_WALL;
-  } 
+  }
 }
 void rotateTowardWall() {
-  if (DriveToPos(4250,4250,-15,15)) {
+  if (DriveToPos(4000, 4000, -20, 20)) {
     ZeroDriveEncoders();
     state = MOVE_TOWARD_WALL;
   }
 }
 void moveTowardWall() {
-  if (DriveToPos(14000,1400,-15,-15)) {
+  if (DriveToPos(15250, 15250, 20, 20)) {
     ZeroDriveEncoders();
     state = ROTATE_TOWARD_GOAL;
   }
 }
 void rotateTowardGoal() {
-  if (DriveToPos(4500,4500,15,-15)) {
+  if (DriveToPos(4000, 4000, 20, -20)) {
     ZeroDriveEncoders();
     state = MOVE_TOWARD_GOAL;
   }
 }
 void moveTowardGoal() {
-    if (DriveToPos(14000,14000,15,15)) {
+  if (DriveToPos(12000, 12000, 40, 40)) {
     ZeroDriveEncoders();
     state = REACHED_GOAL;
   }
 }
 
 void reachedGoal() {
-  
+    if (DriveToPos(100, 100, -20, -20)) {
+    ZeroDriveEncoders();
+    state = COMPLETE;
 }
+}
+
+void ultrasonicTimerPin(void) {
+//  digitalWrite(TRIGGER, LOW);
+//  // Reads the echoPin, returns the sound wave travel time in microseconds
+//  int duration = pulseIn(ECHO_L, HIGH);
+//  digitalWrite(TRIGGER, HIGH);
+//  // Calculating the distance
+//  Ultra_L = duration * 0.034 / 2; // Speed of sound wave divided by 2 (go and back)
+}
+
 
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
   Serial1.begin(9600);
-  
+
   EncVelTimer.begin(calcVelocity, ENC_SAMPLE_DUR);
+  UltrasonicTimer.begin(ultrasonicTimerPin, 10000);
   pinMode(PWM_L, OUTPUT);
   pinMode(L_D1, OUTPUT);
   pinMode(L_D2, OUTPUT);
@@ -395,6 +430,8 @@ void setup() {
   pinMode(ROT_D1, OUTPUT);
   pinMode(ROT_D2, OUTPUT);
 
+  pinMode(TRIGGER, OUTPUT); // Sets the trigPin as an OUTPUT
+  pinMode(ECHO_L, INPUT); // Sets the echoPin as an INPUT
 
   L_V_PID.SetMode(AUTOMATIC);
   L_V_PID.SetOutputLimits(0, 255);
@@ -420,34 +457,38 @@ void setup() {
 
 
 void loop() {
-  switch (state) {
-    case REVERSE_ON_LINE:
-      reverseOnLine();
-      break;
-    case ROTATE_TOWARD_WALL:
-      rotateTowardWall();
-      break;
-    case MOVE_TOWARD_WALL:
-      moveTowardWall();
-      break;
-    case ROTATE_TOWARD_GOAL:
-      rotateTowardGoal();
-      break;
-    case MOVE_TOWARD_GOAL:
-      moveTowardGoal();
-      break;
-    case REACHED_GOAL:
-      reachedGoal();
-      break;
-    default:    // Should never get into an unhandled state
-      Serial.println("What is this I do not even...");
-  }
-//    if (Serial1.available())
-//    {
-//    char buff[50];
-//    String TEENSY = Serial1.readString();
-//    TEENSY.toCharArray(buff, 50);
-//    Serial.print(buff);
-//    char* token = strtok(buff, ","); }
+    switch (state) {
+      case REVERSE_ON_LINE:
+        reverseOnLine();
+        break;
+      case ROTATE_TOWARD_WALL:
+        rotateTowardWall();
+        break;
+      case MOVE_TOWARD_WALL:
+        moveTowardWall();
+        break;
+      case ROTATE_TOWARD_GOAL:
+        rotateTowardGoal();
+        break;
+      case MOVE_TOWARD_GOAL:
+        moveTowardGoal();
+        break;
+      case REACHED_GOAL:
+        reachedGoal();
+        break;
+      case COMPLETE:
+        break;
+      default:    // Should never get into an unhandled state
+        Serial.println("What is this I do not even...");
+        }
 
-  }
+}
+
+//    char buff[50];
+//    String TEENSY = Serial1.read();
+//    TEENSY.toCharArray(buff, 50);
+//    Serial.println(TEENSY);
+//    char* token = strtok(buff, ",");
+//    int Ultra_L = token[0];
+//    Serial.println(TEENSY);
+//    int Ultra_R = token[0];

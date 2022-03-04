@@ -53,6 +53,12 @@ IntervalTimer UltrasonicTimer;
 // #define U_LIM_1
 #define L_LIM 0 
 
+// LINE SENSOR PINS
+#define L_LINE 1
+#define M_LINE 13
+#define R_LINE 14
+
+
 #define WALLFOLLOW_MAXTURN 20
 
 Encoder ENCODER_R(REA, REB);
@@ -356,7 +362,7 @@ bool RotateTheta(int theta, int velocity) {
 
 typedef enum {
   HOMING,INTAKE, STOP_LOADING,
-  REVERSE_ON_LINE,
+  REVERSE_ON_LINE, LINE_FOLLOWING,
   ROTATE_TOWARD_WALL,
   MOVE_TOWARD_WALL, ROTATE_TOWARD_GOAL,
   MOVE_TOWARD_GOAL, REACHED_GOAL, 
@@ -467,6 +473,45 @@ void ultrasonicTimerPin(void) {
 //  Ultra_L = duration * 0.034 / 2; // Speed of sound wave divided by 2 (go and back)
 }
 
+bool followLine(int lineVelocity, int turnVelocity){
+  bool middleLine = digitalRead(M_LINE);
+  bool leftLine = digitalRead(L_LINE);
+  bool rightLine = digitalRead(R_LINE);
+  int leftVelocity;
+  int rightVelocity;
+  if (middleLine && !(leftLine) && !(rightLine)){
+    leftVelocity = lineVelocity;
+    rightVelocity = lineVelocity;
+  }else if(leftLine && !(middleLine) && !(rightLine)){
+    leftVelocity = lineVelocity - turnVelocity;
+    rightVelocity = lineVelocity + turnVelocity;
+  }else if(rightLine && !(middleLine) && !(leftLine)){
+    leftVelocity = lineVelocity + turnVelocity;
+    rightVelocity = lineVelocity - turnVelocity;
+  }else if(leftLine && (middleLine) && !(rightLine)){
+    leftVelocity = lineVelocity - turnVelocity/2;
+    rightVelocity = lineVelocity + turnVelocity/2;
+  }else if(rightLine && (middleLine) && !(leftLine)){
+    leftVelocity = lineVelocity + turnVelocity/2;
+    rightVelocity = lineVelocity - turnVelocity/2;
+  }else if(middleLine && (leftLine || rightLine)){
+    leftVelocity = 0;
+    rightVelocity = 0;
+    runMotor(DRIVE_MOTOR_L, 0);
+    runMotor(DRIVE_MOTOR_R, 0);
+    //return true;
+  }else{
+    leftVelocity = -turnVelocity;
+    rightVelocity = turnVelocity;
+  }
+  VelPID(DRIVE_MOTOR_L, leftVelocity);
+  VelPID(DRIVE_MOTOR_R, rightVelocity);
+  //Serial.print(leftLine); Serial.print(middleLine); Serial.print(rightLine); Serial.println();
+  //delay(10);
+  if(millis() % 50 == 0){
+    Serial.print(leftVelocity); Serial.print(" "); Serial.println(rightVelocity);
+  }
+}
 
 
 void setup() {
@@ -493,6 +538,8 @@ void setup() {
   pinMode(TRIGGER, OUTPUT); // Sets the trigPin as an OUTPUT
   pinMode(ECHO_L, INPUT); // Sets the echoPin as an INPUT
 
+  pinMode(L_LINE, INPUT);
+
   L_V_PID.SetMode(AUTOMATIC);
   L_V_PID.SetOutputLimits(0, 255);
   L_V_PID.SetSampleTime(50);
@@ -512,6 +559,7 @@ void setup() {
   Wall_PID.SetOutputLimits(-WALLFOLLOW_MAXTURN, WALLFOLLOW_MAXTURN);
   ZeroDriveEncoders();
   state = HOMING;
+  state = LINE_FOLLOWING;
 }
 
 
@@ -555,6 +603,9 @@ void loop() {
         finalHome();
         break;
       case COMPLETE:
+        break;
+      case LINE_FOLLOWING:
+        followLine(-30, -10);
         break;
       default:    // Should never get into an unhandled state
         Serial.println("What is this I do not even...");

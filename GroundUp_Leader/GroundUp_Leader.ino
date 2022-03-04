@@ -82,11 +82,11 @@ int COUNTER_TIMER_R_OLD = 0;
 double LMotorV, RMotorV, LMotorDC, RMotorDC, LMotorVSet, RMotorVSet;
 
 double LVKp = 2;
-double LVKi = 6;
+double LVKi = 8;
 double LVKd = 0;
 
 double RVKp = 2;
-double RVKi = 6;
+double RVKi = 8;
 double RVKd = 0;
 
 double LMotorPos, RMotorPos, LMotorDesV, RMotorDesV, LMotorPosSet, RMotorPosSet;
@@ -367,6 +367,7 @@ typedef enum {
   MOVE_TOWARD_WALL, ROTATE_TOWARD_GOAL,
   MOVE_TOWARD_GOAL, REACHED_GOAL, 
   RAISE_ARM, OUTTAKE,FINAL_HOME,
+  REVERSE_FROM_BASKET, ROTATE_TOWARD_LINE, MOVE_TOWARD_LINE, ROTATE_AT_LINE, LINE_FOLLOWING_RETURN,
   COMPLETE
 } STATE_MACHINE;
 
@@ -392,38 +393,39 @@ void intake(){
 
 void stopLoading(){
   Take(0);
-  if (DriveToPos(3300, 3300, 20, 20)){
-    ZeroDriveEncoders();
-    state = REVERSE_ON_LINE;
-  }
+  // if (DriveToPos(3300, 3300, 30, 30)){
+    // ZeroDriveEncoders();
+  state = REVERSE_ON_LINE;
+  // }
 }
 
 void reverseOnLine() {
-  if (DriveToPos(26500, 26500, 30, 30)) {
+  if (DriveToPos(29800, 29800, 60, 60)) {
     ZeroDriveEncoders();
     state = ROTATE_TOWARD_WALL;
   }
 }
 void rotateTowardWall() {
-  if (DriveToPos(4000, 4000, -20, 20)) {
+  //4000
+  if (DriveToPos(3750, 3750, -10, 10)) {
     ZeroDriveEncoders();
     state = MOVE_TOWARD_WALL;
   }
 }
 void moveTowardWall() {
-  if (DriveToPos(15000, 15000, 20, 20)) {
+  if (DriveToPos(15000, 15000, 50, 50)) {
     ZeroDriveEncoders();
     state = ROTATE_TOWARD_GOAL;
   }
 }
 void rotateTowardGoal() {
-  if (DriveToPos(4000, 4000, 20, -20)) {
+  if (DriveToPos(3750, 3750, 10, -10)) {
     ZeroDriveEncoders();
     state = MOVE_TOWARD_GOAL;
   }
 }
 void moveTowardGoal() {
-  if (DriveToPos(12000, 12000, 30, 30)) {
+  if (DriveToPos(12000, 12000, 50, 50)) {
     ZeroDriveEncoders();
     state = REACHED_GOAL;
   }
@@ -460,7 +462,42 @@ void finalHome(){
   } else {
     runMotor(ARM_MOTOR, 0);
     ENCODER_ARM.write(0);
-    state = COMPLETE;
+    state = REVERSE_FROM_BASKET;
+  }
+}
+
+void reverseFromBasket(){
+  //3300
+  if (DriveToPos(6000, 6000, -50, -50)){
+    ZeroDriveEncoders();
+    state = ROTATE_TOWARD_LINE;
+  }
+}
+
+void rotateTowardLine(){
+  if (DriveToPos(3750, 3750, -20, 20)) {
+    ZeroDriveEncoders();
+    state = MOVE_TOWARD_LINE;
+  }
+}
+
+void moveTowardLine(){
+  if (DriveToPos(17500, 17500, -50, -50)) {
+    ZeroDriveEncoders();
+    state = ROTATE_AT_LINE;
+  }
+}
+
+void rotateAtLine(){
+  if (DriveToPos(3750, 3750, 20, -20)) {
+    ZeroDriveEncoders();
+    state = LINE_FOLLOWING_RETURN;
+  }
+}
+
+void lineFollowingReturn(){
+  if (followLine(-30, -10)) {
+     state = HOMING;
   }
 }
 
@@ -494,12 +531,12 @@ bool followLine(int lineVelocity, int turnVelocity){
   }else if(rightLine && (middleLine) && !(leftLine)){
     leftVelocity = lineVelocity + turnVelocity/2;
     rightVelocity = lineVelocity - turnVelocity/2;
-  }else if(middleLine && (leftLine || rightLine)){
+  }else if(middleLine && (leftLine && rightLine)){
     leftVelocity = 0;
     rightVelocity = 0;
     runMotor(DRIVE_MOTOR_L, 0);
     runMotor(DRIVE_MOTOR_R, 0);
-    //return true;
+    return true;
   }else{
     leftVelocity = -turnVelocity;
     rightVelocity = turnVelocity;
@@ -511,6 +548,7 @@ bool followLine(int lineVelocity, int turnVelocity){
   if(millis() % 50 == 0){
     Serial.print(leftVelocity); Serial.print(" "); Serial.println(rightVelocity);
   }
+  return false;
 }
 
 
@@ -559,7 +597,7 @@ void setup() {
   Wall_PID.SetOutputLimits(-WALLFOLLOW_MAXTURN, WALLFOLLOW_MAXTURN);
   ZeroDriveEncoders();
   state = HOMING;
-  state = LINE_FOLLOWING;
+  // state = LINE_FOLLOWING;
 }
 
 
@@ -602,6 +640,21 @@ void loop() {
       case FINAL_HOME:
         finalHome();
         break;
+      case REVERSE_FROM_BASKET:
+        reverseFromBasket(); 
+        break;
+      case ROTATE_TOWARD_LINE:
+        rotateTowardLine(); 
+        break;
+      case MOVE_TOWARD_LINE:
+        moveTowardLine(); 
+        break;
+      case ROTATE_AT_LINE:
+        rotateAtLine(); 
+        break;
+      case LINE_FOLLOWING_RETURN:
+        lineFollowingReturn();
+        break; 
       case COMPLETE:
         break;
       case LINE_FOLLOWING:

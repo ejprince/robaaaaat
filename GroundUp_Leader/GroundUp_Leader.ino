@@ -535,14 +535,16 @@ void rotateAtLine(){
 
 void lineFollowingReturn(){
   if (followLine(-30, -10)) {
+     //Serial.println("f");
      ZeroDriveEncoders();
      driveBreak();
+     //state = COMPLETE;
      state = ENTER_LOADING;
   }
 }
 
 void enterLoading(){
-  if (DriveToPos(3500, 3500, 50, 50)) {
+  if (DriveToPos(3500, 3500, -50, -50)) {
     ZeroDriveEncoders();
     driveBreak();
     state = HOMING;
@@ -575,23 +577,23 @@ bool followLine(int lineVelocity, int turnVelocity){
   if (middleLine && !(leftLine) && !(rightLine)){
     leftVelocity = lineVelocity;
     rightVelocity = lineVelocity;
-    Serial.println("M");
+    //Serial.println("M");
   }else if(leftLine && !(middleLine) && !(rightLine)){
     leftVelocity = lineVelocity - turnVelocity;
     rightVelocity = lineVelocity + turnVelocity;
-    Serial.println("L");
+    //Serial.println("L");
   }else if(rightLine && !(middleLine) && !(leftLine)){
     leftVelocity = lineVelocity + turnVelocity;
     rightVelocity = lineVelocity - turnVelocity;
-    Serial.println("R");
+    //Serial.println("R");
   }else if(leftLine && (middleLine) && !(rightLine)){
     leftVelocity = lineVelocity - turnVelocity/2;
     rightVelocity = lineVelocity + turnVelocity/2;
-    Serial.println("LM");
+    //Serial.println("LM");
   }else if(rightLine && (middleLine) && !(leftLine)){
     leftVelocity = lineVelocity + turnVelocity/2;
     rightVelocity = lineVelocity - turnVelocity/2;
-    Serial.println("RM");
+    //Serial.println("RM");
   }else if(middleLine && (leftLine && rightLine)){
     leftVelocity = 0;
     rightVelocity = 0;
@@ -608,9 +610,9 @@ bool followLine(int lineVelocity, int turnVelocity){
   VelPID(DRIVE_MOTOR_R, rightVelocity);
   //Serial.print(leftLine); Serial.print(middleLine); Serial.print(rightLine); Serial.println();
   //delay(10);
-  if(millis() % 50 == 0){
+  /*if(millis() % 50 == 0){
     Serial.print(leftVelocity); Serial.print(" "); Serial.println(rightVelocity);
-  }
+  }*/
   return false;
 }
 
@@ -659,8 +661,8 @@ void setup() {
   Wall_PID.SetMode(AUTOMATIC);
   Wall_PID.SetOutputLimits(-WALLFOLLOW_MAXTURN, WALLFOLLOW_MAXTURN);
   ZeroDriveEncoders();
-  //state = HOMING;
-  state = LINE_FOLLOWING;
+  state = HOMING;
+  //state = LINE_FOLLOWING_RETURN;
 }
 
 
@@ -723,14 +725,15 @@ void loop() {
         break;
       case LINE_FOLLOWING_RETURN:
         lineFollowingReturn();
+        break;
       case ENTER_LOADING:
         enterLoading();
         break; 
       case COMPLETE:
         break;
-      case LINE_FOLLOWING:
+      /*case LINE_FOLLOWING:
         followLine(-30, -10);
-        break;
+        break;*/
       case TEST_ROTATION:
         testRotation();
         break;

@@ -359,16 +359,26 @@ bool RotateTheta(int theta, int velocity) {
   }
 }
 
+// Stop Motor
+void stopMotor(int motor){
+  runMotor(motor, 0);
+}
+
+void driveBreak(){
+  stopMotor(DRIVE_MOTOR_L);
+  stopMotor(DRIVE_MOTOR_R);
+}
 
 typedef enum {
   HOMING,INTAKE, STOP_LOADING,
   REVERSE_ON_LINE, LINE_FOLLOWING,
   ROTATE_TOWARD_WALL,
-  MOVE_TOWARD_WALL, ROTATE_TOWARD_GOAL,
+  MOVE_TOWARD_WALL, BACK_FROM_WALL, ROTATE_TOWARD_GOAL,
   MOVE_TOWARD_GOAL, REACHED_GOAL, 
   RAISE_ARM, OUTTAKE,FINAL_HOME,
-  REVERSE_FROM_BASKET, ROTATE_TOWARD_LINE, MOVE_TOWARD_LINE, ROTATE_AT_LINE, LINE_FOLLOWING_RETURN,
-  COMPLETE
+  REVERSE_FROM_BASKET, SQUARE_TOWARD_WALL, ROTATE_TOWARD_LINE, MOVE_TOWARD_LINE, ROTATE_AT_LINE, LINE_FOLLOWING_RETURN, ENTER_LOADING,
+  COMPLETE,
+  TEST_ROTATION
 } STATE_MACHINE;
 
 STATE_MACHINE state;
@@ -387,6 +397,7 @@ void intake(){
   Take(1);
   if (DriveToPos(3700, 3700, -20, -20)){
     ZeroDriveEncoders();
+    driveBreak();
     state = STOP_LOADING;
   }
 }
@@ -402,38 +413,53 @@ void stopLoading(){
 void reverseOnLine() {
   if (DriveToPos(29800, 29800, 60, 60)) {
     ZeroDriveEncoders();
+    driveBreak();
     state = ROTATE_TOWARD_WALL;
   }
 }
 void rotateTowardWall() {
   //4000
-  if (DriveToPos(3750, 3750, -10, 10)) {
+  if (DriveToPos(3850, 3850, -30, 30)) {
     ZeroDriveEncoders();
+    driveBreak();
     state = MOVE_TOWARD_WALL;
   }
 }
 void moveTowardWall() {
-  if (DriveToPos(15000, 15000, 50, 50)) {
+  if (DriveToPos(20700, 20700, 50, 50)) {
     ZeroDriveEncoders();
+    driveBreak();
+    state = BACK_FROM_WALL;
+  }
+}
+
+void backFromWall(){
+  if (DriveToPos(3000, 3000, -50, -50)){
+    ZeroDriveEncoders();
+    driveBreak();
     state = ROTATE_TOWARD_GOAL;
   }
 }
+
 void rotateTowardGoal() {
-  if (DriveToPos(3750, 3750, 10, -10)) {
+  if (DriveToPos(3750, 3750, 30, -30)) {
     ZeroDriveEncoders();
+    driveBreak();
     state = MOVE_TOWARD_GOAL;
   }
 }
 void moveTowardGoal() {
-  if (DriveToPos(12000, 12000, 50, 50)) {
+  if (DriveToPos(14000, 14000, 50, 50)) {
     ZeroDriveEncoders();
+    driveBreak();
     state = REACHED_GOAL;
   }
 }
 
 void reachedGoal() {
-    if (DriveToPos(100, 100, -20, -20)) {
+    if (DriveToPos(100, 100, -50, -50)) {
     ZeroDriveEncoders();
+    driveBreak();
     state = RAISE_ARM;
   }
 }
@@ -468,36 +494,66 @@ void finalHome(){
 
 void reverseFromBasket(){
   //3300
-  if (DriveToPos(6000, 6000, -50, -50)){
+  if (DriveToPos(8000, 8000, -50, -50)){
     ZeroDriveEncoders();
+    driveBreak();
     state = ROTATE_TOWARD_LINE;
   }
 }
 
 void rotateTowardLine(){
-  if (DriveToPos(3750, 3750, -20, 20)) {
+  if (DriveToPos(3750, 3750, -30, 30)) {
     ZeroDriveEncoders();
+    driveBreak();
+    state = SQUARE_TOWARD_WALL;
+  }
+}
+
+void squareTowardWall(){
+  if (DriveToPos(8000, 8000, 50, 50)) {
+    ZeroDriveEncoders();
+    driveBreak();
     state = MOVE_TOWARD_LINE;
   }
 }
 
 void moveTowardLine(){
-  if (DriveToPos(17500, 17500, -50, -50)) {
+  if (DriveToPos(18700, 18700, -50, -50)) {
     ZeroDriveEncoders();
+    driveBreak();
     state = ROTATE_AT_LINE;
   }
 }
 
 void rotateAtLine(){
-  if (DriveToPos(3750, 3750, 20, -20)) {
+  if (DriveToPos(3750, 3750, 30, -30)) {
     ZeroDriveEncoders();
+    driveBreak();
     state = LINE_FOLLOWING_RETURN;
   }
 }
 
 void lineFollowingReturn(){
   if (followLine(-30, -10)) {
-     state = HOMING;
+     ZeroDriveEncoders();
+     driveBreak();
+     state = ENTER_LOADING;
+  }
+}
+
+void enterLoading(){
+  if (DriveToPos(3500, 3500, 50, 50)) {
+    ZeroDriveEncoders();
+    driveBreak();
+    state = HOMING;
+  }
+}
+
+void testRotation(){
+    if (DriveToPos(3750, 3750, -30, 30)) {
+    ZeroDriveEncoders();
+    driveBreak();
+    state = COMPLETE;
   }
 }
 
@@ -519,27 +575,34 @@ bool followLine(int lineVelocity, int turnVelocity){
   if (middleLine && !(leftLine) && !(rightLine)){
     leftVelocity = lineVelocity;
     rightVelocity = lineVelocity;
+    Serial.println("M");
   }else if(leftLine && !(middleLine) && !(rightLine)){
     leftVelocity = lineVelocity - turnVelocity;
     rightVelocity = lineVelocity + turnVelocity;
+    Serial.println("L");
   }else if(rightLine && !(middleLine) && !(leftLine)){
     leftVelocity = lineVelocity + turnVelocity;
     rightVelocity = lineVelocity - turnVelocity;
+    Serial.println("R");
   }else if(leftLine && (middleLine) && !(rightLine)){
     leftVelocity = lineVelocity - turnVelocity/2;
     rightVelocity = lineVelocity + turnVelocity/2;
+    Serial.println("LM");
   }else if(rightLine && (middleLine) && !(leftLine)){
     leftVelocity = lineVelocity + turnVelocity/2;
     rightVelocity = lineVelocity - turnVelocity/2;
+    Serial.println("RM");
   }else if(middleLine && (leftLine && rightLine)){
     leftVelocity = 0;
     rightVelocity = 0;
     runMotor(DRIVE_MOTOR_L, 0);
     runMotor(DRIVE_MOTOR_R, 0);
+    Serial.println("LMR");
     return true;
   }else{
     leftVelocity = -turnVelocity;
     rightVelocity = turnVelocity;
+    Serial.println("else");
   }
   VelPID(DRIVE_MOTOR_L, leftVelocity);
   VelPID(DRIVE_MOTOR_R, rightVelocity);
@@ -596,8 +659,8 @@ void setup() {
   Wall_PID.SetMode(AUTOMATIC);
   Wall_PID.SetOutputLimits(-WALLFOLLOW_MAXTURN, WALLFOLLOW_MAXTURN);
   ZeroDriveEncoders();
-  state = HOMING;
-  // state = LINE_FOLLOWING;
+  //state = HOMING;
+  state = LINE_FOLLOWING;
 }
 
 
@@ -621,6 +684,9 @@ void loop() {
         break;
       case MOVE_TOWARD_WALL:
         moveTowardWall();
+        break;
+      case BACK_FROM_WALL:
+        backFromWall();
         break;
       case ROTATE_TOWARD_GOAL:
         rotateTowardGoal();
@@ -646,6 +712,9 @@ void loop() {
       case ROTATE_TOWARD_LINE:
         rotateTowardLine(); 
         break;
+      case SQUARE_TOWARD_WALL:
+        squareTowardWall();
+        break;
       case MOVE_TOWARD_LINE:
         moveTowardLine(); 
         break;
@@ -654,11 +723,16 @@ void loop() {
         break;
       case LINE_FOLLOWING_RETURN:
         lineFollowingReturn();
+      case ENTER_LOADING:
+        enterLoading();
         break; 
       case COMPLETE:
         break;
       case LINE_FOLLOWING:
         followLine(-30, -10);
+        break;
+      case TEST_ROTATION:
+        testRotation();
         break;
       default:    // Should never get into an unhandled state
         Serial.println("What is this I do not even...");

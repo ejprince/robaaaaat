@@ -58,8 +58,17 @@ IntervalTimer UltrasonicTimer;
 #define M_LINE 13
 #define R_LINE 14
 
+//COLOR PIN
+#define COLOR_PIN 40
+
+//BUTTON PIN
+#define BUTTON_PIN 37
 
 #define WALLFOLLOW_MAXTURN 20
+
+int COLOR;
+#define BLUE 1
+#define RED -1
 
 Encoder ENCODER_R(REA, REB);
 Encoder ENCODER_L(LEA, LEB);
@@ -372,6 +381,7 @@ void driveBreak(){
 }
 
 typedef enum {
+  STOPPED,
   HOMING,INTAKE, STOP_LOADING,
   REVERSE_ON_LINE, LINE_FOLLOWING,
   ROTATE_TOWARD_WALL,
@@ -385,7 +395,23 @@ typedef enum {
 
 STATE_MACHINE state;
 
+bool ButtonPressed() {
+  return !digitalRead(BUTTON_PIN);
+}
+
+void stopRobot(){
+   if (millis()%100 == 0) {
+      Serial.println("STOPPED");
+  }
+  if (!ButtonPressed())
+    state = HOMING;
+}
+
+
 void homeArm(){
+  if (millis()%100 == 0) {
+      Serial.println("HOMING");
+  }
   if (!LowerLimitPressed()){
     runMotor(ARM_MOTOR, -200);
   } else {
@@ -649,6 +675,17 @@ void setup() {
   Serial.begin(9600);
   Serial1.begin(9600);
 
+  pinMode(COLOR_PIN, INPUT);
+  if (digitalRead(COLOR_PIN) == HIGH) {
+    COLOR = BLUE;
+  }
+  else {
+    COLOR = RED;
+  }
+
+  pinMode(BUTTON_PIN,INPUT_PULLUP);
+
+
   EncVelTimer.begin(calcVelocity, ENC_SAMPLE_DUR);
   UltrasonicTimer.begin(ultrasonicTimerPin, 10000);
   pinMode(PWM_L, OUTPUT);
@@ -696,6 +733,9 @@ void setup() {
 
 void loop() {
     switch (state) {
+      case STOPPED:
+        stopRobot();
+        break;
       case HOMING:
         homeArm();
         break;
@@ -773,7 +813,9 @@ void loop() {
       default:    // Should never get into an unhandled state
         Serial.println("What is this I do not even...");
         }
-
+     if (ButtonPressed()) {
+      state = STOPPED;
+     }
 }
 
 //    char buff[50];

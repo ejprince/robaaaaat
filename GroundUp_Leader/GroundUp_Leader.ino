@@ -58,6 +58,7 @@ IntervalTimer UltrasonicTimer;
 #define M_LINE 13
 #define R_LINE 14
 
+#define COLOR_PIN 40
 
 #define WALLFOLLOW_MAXTURN 20
 
@@ -78,6 +79,11 @@ int COUNTER_TIMER_R_OLD = 0;
 #define MAX_DRIVE_SPEED_RPM 100
 
 #define NINETY_DEG_TURN_COUNTS 4500
+
+
+int COLOR;
+#define BLUE 1
+#define RED -1
 
 double LMotorV, RMotorV, LMotorDC, RMotorDC, LMotorVSet, RMotorVSet;
 
@@ -131,7 +137,6 @@ int Ultra_F;
 double LMotorVel;
 double RMotorVel;
 
-IntervalTimer GameTimer;
 IntervalTimer EncVelTimer;
 #define ENC_SAMPLE_DUR 5000
 #define ULTRASONIC_TIMER 10000
@@ -368,7 +373,6 @@ void stopMotor(int motor){
 void driveBreak(){
   stopMotor(DRIVE_MOTOR_L);
   stopMotor(DRIVE_MOTOR_R);
-  delay(10);
 }
 
 typedef enum {
@@ -378,7 +382,7 @@ typedef enum {
   MOVE_TOWARD_WALL, BACK_FROM_WALL, ROTATE_TOWARD_GOAL,
   MOVE_TOWARD_GOAL, REACHED_GOAL, 
   RAISE_ARM, OUTTAKE,FINAL_HOME,
-  REVERSE_FROM_BASKET, SQUARE_TOWARD_WALL, ROTATE_TOWARD_LINE, MOVE_TOWARD_LINE, FIND_LINE, MOVE_FROM_LINE, ROTATE_AT_LINE, LINE_FOLLOWING_RETURN, ENTER_LOADING,
+  REVERSE_FROM_BASKET, SQUARE_TOWARD_WALL, ROTATE_TOWARD_LINE, MOVE_TOWARD_LINE, ROTATE_AT_LINE, LINE_FOLLOWING_RETURN, ENTER_LOADING,
   COMPLETE,
   TEST_ROTATION
 } STATE_MACHINE;
@@ -413,7 +417,7 @@ void stopLoading(){
 }
 
 void reverseOnLine() {
-  if (DriveToPos(29800, 29800, 100, 100)) {
+  if (DriveToPos(29800, 29800, 60, 60)) {
     ZeroDriveEncoders();
     driveBreak();
     state = ROTATE_TOWARD_WALL;
@@ -421,14 +425,14 @@ void reverseOnLine() {
 }
 void rotateTowardWall() {
   //4000
-  if (DriveToPos(3850, 3850, 80, -80)) {
+  if (DriveToPos(3850, 3850, -30, 30)) {
     ZeroDriveEncoders();
     driveBreak();
     state = MOVE_TOWARD_WALL;
   }
 }
 void moveTowardWall() {
-  if (DriveToPos(20700, 20700, -80, -80)) {
+  if (DriveToPos(20700, 20700, 50, 50)) {
     ZeroDriveEncoders();
     driveBreak();
     state = BACK_FROM_WALL;
@@ -436,7 +440,7 @@ void moveTowardWall() {
 }
 
 void backFromWall(){
-  if (DriveToPos(500, 500, 30, 30)){
+  if (DriveToPos(3000, 3000, -50, -50)){
     ZeroDriveEncoders();
     driveBreak();
     state = ROTATE_TOWARD_GOAL;
@@ -444,7 +448,7 @@ void backFromWall(){
 }
 
 void rotateTowardGoal() {
-  if (DriveToPos(4650, 4650, -30, 30)) {
+  if (DriveToPos(3750, 3750, 30, -30)) {
     ZeroDriveEncoders();
     driveBreak();
     state = MOVE_TOWARD_GOAL;
@@ -459,7 +463,7 @@ void moveTowardGoal() {
 }
 
 void reachedGoal() {
-    if (DriveToPos(100, 100, 50, -50)) {
+    if (DriveToPos(100, 100, -50, -50)) {
     ZeroDriveEncoders();
     driveBreak();
     state = RAISE_ARM;
@@ -496,7 +500,7 @@ void finalHome(){
 
 void reverseFromBasket(){
   //3300
-  if (DriveToPos(6500, 6500, -50, -50)){
+  if (DriveToPos(8000, 8000, -50, -50)){
     ZeroDriveEncoders();
     driveBreak();
     state = ROTATE_TOWARD_LINE;
@@ -504,7 +508,7 @@ void reverseFromBasket(){
 }
 
 void rotateTowardLine(){
-  if (DriveToPos(3750, 3750, -80, 80)) {
+  if (DriveToPos(3750, 3750, -30, 30)) {
     ZeroDriveEncoders();
     driveBreak();
     state = SQUARE_TOWARD_WALL;
@@ -520,32 +524,7 @@ void squareTowardWall(){
 }
 
 void moveTowardLine(){
-  if (DriveToPos(18000, 18000, -80, -80)) { 
-    ZeroDriveEncoders();
-    driveBreak();
-    state = FIND_LINE;
-  }
-  
-}
-
-void findLine(){
-  bool middleLine = digitalRead(M_LINE);
-  bool leftLine = digitalRead(L_LINE);
-  bool rightLine = digitalRead(R_LINE);
-  Serial.print(leftLine); Serial.print(middleLine); Serial.println(rightLine);
-  if (!middleLine && !leftLine && !rightLine){
-    VelPID(DRIVE_MOTOR_L, -30);
-    VelPID(DRIVE_MOTOR_R, -30);
-  }else{
-    Serial.println("FOUND LINE");
-    ZeroDriveEncoders();
-    driveBreak();
-    state = MOVE_FROM_LINE;
-  }
-}
-
-void moveFromLine(){
-  if (DriveToPos(1500, 1500, -50, -50)) { 
+  if (DriveToPos(18700, 18700, -50, -50)) {
     ZeroDriveEncoders();
     driveBreak();
     state = ROTATE_AT_LINE;
@@ -553,7 +532,7 @@ void moveFromLine(){
 }
 
 void rotateAtLine(){
-  if (DriveToPos(3750, 3750, 50, -50)) {
+  if (DriveToPos(3750, 3750, 30, -30)) {
     ZeroDriveEncoders();
     driveBreak();
     state = LINE_FOLLOWING_RETURN;
@@ -561,17 +540,15 @@ void rotateAtLine(){
 }
 
 void lineFollowingReturn(){
-  if (followLine(-30, -5)) {
-     //Serial.println("f");
+  if (followLine(-30, -10)) {
      ZeroDriveEncoders();
      driveBreak();
-     //state = COMPLETE;
      state = ENTER_LOADING;
   }
 }
 
 void enterLoading(){
-  if (DriveToPos(3500, 3500, -50, -50)) {
+  if (DriveToPos(3500, 3500, 50, 50)) {
     ZeroDriveEncoders();
     driveBreak();
     state = HOMING;
@@ -604,24 +581,24 @@ bool followLine(int lineVelocity, int turnVelocity){
   if (middleLine && !(leftLine) && !(rightLine)){
     leftVelocity = lineVelocity;
     rightVelocity = lineVelocity;
-    //Serial.println("M");
+    Serial.println("M");
   }else if(leftLine && !(middleLine) && !(rightLine)){
     leftVelocity = lineVelocity - turnVelocity;
     rightVelocity = lineVelocity + turnVelocity;
-    //Serial.println("L");
+    Serial.println("L");
   }else if(rightLine && !(middleLine) && !(leftLine)){
     leftVelocity = lineVelocity + turnVelocity;
     rightVelocity = lineVelocity - turnVelocity;
-    //Serial.println("R");
+    Serial.println("R");
   }else if(leftLine && (middleLine) && !(rightLine)){
     leftVelocity = lineVelocity - turnVelocity/2;
     rightVelocity = lineVelocity + turnVelocity/2;
-    //Serial.println("LM");
+    Serial.println("LM");
   }else if(rightLine && (middleLine) && !(leftLine)){
     leftVelocity = lineVelocity + turnVelocity/2;
     rightVelocity = lineVelocity - turnVelocity/2;
-    //Serial.println("RM");
-  }else if(middleLine && (leftLine && rightLine) && getEncoderCounts(DRIVE_MOTOR_L) < -20000){
+    Serial.println("RM");
+  }else if(middleLine && (leftLine && rightLine)){
     leftVelocity = 0;
     rightVelocity = 0;
     runMotor(DRIVE_MOTOR_L, 0);
@@ -637,9 +614,9 @@ bool followLine(int lineVelocity, int turnVelocity){
   VelPID(DRIVE_MOTOR_R, rightVelocity);
   //Serial.print(leftLine); Serial.print(middleLine); Serial.print(rightLine); Serial.println();
   //delay(10);
-  /*if(millis() % 50 == 0){
+  if(millis() % 50 == 0){
     Serial.print(leftVelocity); Serial.print(" "); Serial.println(rightVelocity);
-  }*/
+  }
   return false;
 }
 
@@ -670,6 +647,14 @@ void setup() {
 
   pinMode(L_LINE, INPUT);
 
+  pinMode(COLOR_PIN, INPUT);
+  if (digitalRead(COLOR_PIN) == HIGH) {
+    COLOR = BLUE;
+  }
+  else {
+    COLOR = RED;
+  }
+
   L_V_PID.SetMode(AUTOMATIC);
   L_V_PID.SetOutputLimits(0, 255);
   L_V_PID.SetSampleTime(50);
@@ -688,91 +673,85 @@ void setup() {
   Wall_PID.SetMode(AUTOMATIC);
   Wall_PID.SetOutputLimits(-WALLFOLLOW_MAXTURN, WALLFOLLOW_MAXTURN);
   ZeroDriveEncoders();
-  state = HOMING;
-  //state = FIND_LINE;
+  //state = HOMING;
+  state = LINE_FOLLOWING;
 }
 
 
 
 void loop() {
-    switch (state) {
-      case HOMING:
-        homeArm();
-        break;
-      case INTAKE:
-        intake();
-        break;
-      case STOP_LOADING:
-        stopLoading();
-        break;
-      case REVERSE_ON_LINE:
-        reverseOnLine();
-        break;
-      case ROTATE_TOWARD_WALL:
-        rotateTowardWall();
-        break;
-      case MOVE_TOWARD_WALL:
-        moveTowardWall();
-        break;
-      case BACK_FROM_WALL:
-        backFromWall();
-        break;
-      case ROTATE_TOWARD_GOAL:
-        rotateTowardGoal();
-        break;
-      case MOVE_TOWARD_GOAL:
-        moveTowardGoal();
-        break;
-      case REACHED_GOAL:
-        reachedGoal();
-        break;
-      case RAISE_ARM:
-        raiseArm();
-        break;
-      case OUTTAKE:
-        outtake();
-        break;
-      case FINAL_HOME:
-        finalHome();
-        break;
-      case REVERSE_FROM_BASKET:
-        reverseFromBasket(); 
-        break;
-      case ROTATE_TOWARD_LINE:
-        rotateTowardLine(); 
-        break;
-      case SQUARE_TOWARD_WALL:
-        squareTowardWall();
-        break;
-      case MOVE_TOWARD_LINE:
-        moveTowardLine(); 
-        break;
-      case FIND_LINE:
-        findLine(); 
-        break;
-      case MOVE_FROM_LINE:
-        moveFromLine(); 
-        break;
-      case ROTATE_AT_LINE:
-        rotateAtLine(); 
-        break;
-      case LINE_FOLLOWING_RETURN:
-        lineFollowingReturn();
-        break;
-      case ENTER_LOADING:
-        enterLoading();
-        break; 
-      case COMPLETE:
-        break;
-      /*case LINE_FOLLOWING:
-        followLine(-30, -10);
-        break;*/
-      case TEST_ROTATION:
-        testRotation();
-        break;
-      default:    // Should never get into an unhandled state
-        Serial.println("What is this I do not even...");
-        }
+    Serial.println(digitalRead(COLOR_PIN));
+//    switch (state) {
+//      case HOMING:
+//        homeArm();
+//        break;
+//      case INTAKE:
+//        intake();
+//        break;
+//      case STOP_LOADING:
+//        stopLoading();
+//        break;
+//      case REVERSE_ON_LINE:
+//        reverseOnLine();
+//        break;
+//      case ROTATE_TOWARD_WALL:
+//        rotateTowardWall();
+//        break;
+//      case MOVE_TOWARD_WALL:
+//        moveTowardWall();
+//        break;
+//      case BACK_FROM_WALL:
+//        backFromWall();
+//        break;
+//      case ROTATE_TOWARD_GOAL:
+//        rotateTowardGoal();
+//        break;
+//      case MOVE_TOWARD_GOAL:
+//        moveTowardGoal();
+//        break;
+//      case REACHED_GOAL:
+//        reachedGoal();
+//        break;
+//      case RAISE_ARM:
+//        raiseArm();
+//        break;
+//      case OUTTAKE:
+//        outtake();
+//        break;
+//      case FINAL_HOME:
+//        finalHome();
+//        break;
+//      case REVERSE_FROM_BASKET:
+//        reverseFromBasket(); 
+//        break;
+//      case ROTATE_TOWARD_LINE:
+//        rotateTowardLine(); 
+//        break;
+//      case SQUARE_TOWARD_WALL:
+//        squareTowardWall();
+//        break;
+//      case MOVE_TOWARD_LINE:
+//        moveTowardLine(); 
+//        break;
+//      case ROTATE_AT_LINE:
+//        rotateAtLine(); 
+//        break;
+//      case LINE_FOLLOWING_RETURN:
+//        lineFollowingReturn();
+//      case ENTER_LOADING:
+//        enterLoading();
+//        break; 
+//      case COMPLETE:
+//        break;
+//      case LINE_FOLLOWING:
+//        followLine(-30, -10);
+//        break;
+//      case TEST_ROTATION:
+//        testRotation();
+//        break;
+//      default:    // Should never get into an unhandled state
+//        Serial.println("What is this I do not even...");
+//        }
 
 }
 

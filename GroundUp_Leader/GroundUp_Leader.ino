@@ -376,7 +376,7 @@ typedef enum {
   MOVE_TOWARD_WALL, BACK_FROM_WALL, ROTATE_TOWARD_GOAL,
   MOVE_TOWARD_GOAL, REACHED_GOAL, 
   RAISE_ARM, OUTTAKE,FINAL_HOME,
-  REVERSE_FROM_BASKET, SQUARE_TOWARD_WALL, ROTATE_TOWARD_LINE, MOVE_TOWARD_LINE, ROTATE_AT_LINE, LINE_FOLLOWING_RETURN, ENTER_LOADING,
+  REVERSE_FROM_BASKET, SQUARE_TOWARD_WALL, ROTATE_TOWARD_LINE, MOVE_TOWARD_LINE, FIND_LINE, MOVE_FROM_LINE, ROTATE_AT_LINE, LINE_FOLLOWING_RETURN, ENTER_LOADING,
   COMPLETE,
   TEST_ROTATION
 } STATE_MACHINE;
@@ -419,7 +419,7 @@ void reverseOnLine() {
 }
 void rotateTowardWall() {
   //4000
-  if (DriveToPos(3850, 3850, -30, 30)) {
+  if (DriveToPos(3850, 3850, -80, 80)) {
     ZeroDriveEncoders();
     driveBreak();
     state = MOVE_TOWARD_WALL;
@@ -434,7 +434,7 @@ void moveTowardWall() {
 }
 
 void backFromWall(){
-  if (DriveToPos(3000, 3000, -50, -50)){
+  if (DriveToPos(3500, 3500, -50, -50)){
     ZeroDriveEncoders();
     driveBreak();
     state = ROTATE_TOWARD_GOAL;
@@ -518,7 +518,32 @@ void squareTowardWall(){
 }
 
 void moveTowardLine(){
-  if (DriveToPos(18700, 18700, -50, -50)) {
+  if (DriveToPos(18000, 18000, -50, -50)) { // needs to be less
+    ZeroDriveEncoders();
+    driveBreak();
+    state = FIND_LINE;
+  }
+  
+}
+
+void findLine(){
+  bool middleLine = digitalRead(M_LINE);
+  bool leftLine = digitalRead(L_LINE);
+  bool rightLine = digitalRead(R_LINE);
+  Serial.print(leftLine); Serial.print(middleLine); Serial.println(rightLine);
+  if (!middleLine && !leftLine && !rightLine){
+    VelPID(DRIVE_MOTOR_L, -30);
+    VelPID(DRIVE_MOTOR_R, -30);
+  }else{
+    Serial.println("FOUND LINE");
+    ZeroDriveEncoders();
+    driveBreak();
+    state = MOVE_FROM_LINE;
+  }
+}
+
+void moveFromLine(){
+  if (DriveToPos(1000, 1000, -50, -50)) { // needs to be less
     ZeroDriveEncoders();
     driveBreak();
     state = ROTATE_AT_LINE;
@@ -538,8 +563,8 @@ void lineFollowingReturn(){
      //Serial.println("f");
      ZeroDriveEncoders();
      driveBreak();
-     //state = COMPLETE;
-     state = ENTER_LOADING;
+     state = COMPLETE;
+     //state = ENTER_LOADING;
   }
 }
 
@@ -662,7 +687,7 @@ void setup() {
   Wall_PID.SetOutputLimits(-WALLFOLLOW_MAXTURN, WALLFOLLOW_MAXTURN);
   ZeroDriveEncoders();
   state = HOMING;
-  //state = LINE_FOLLOWING_RETURN;
+  //state = FIND_LINE;
 }
 
 
@@ -719,6 +744,12 @@ void loop() {
         break;
       case MOVE_TOWARD_LINE:
         moveTowardLine(); 
+        break;
+      case FIND_LINE:
+        findLine(); 
+        break;
+      case MOVE_FROM_LINE:
+        moveFromLine(); 
         break;
       case ROTATE_AT_LINE:
         rotateAtLine(); 

@@ -131,6 +131,7 @@ int Ultra_F;
 double LMotorVel;
 double RMotorVel;
 
+IntervalTimer GameTimer;
 IntervalTimer EncVelTimer;
 #define ENC_SAMPLE_DUR 5000
 #define ULTRASONIC_TIMER 10000
@@ -367,6 +368,7 @@ void stopMotor(int motor){
 void driveBreak(){
   stopMotor(DRIVE_MOTOR_L);
   stopMotor(DRIVE_MOTOR_R);
+  delay(10);
 }
 
 typedef enum {
@@ -411,7 +413,7 @@ void stopLoading(){
 }
 
 void reverseOnLine() {
-  if (DriveToPos(29800, 29800, 60, 60)) {
+  if (DriveToPos(29800, 29800, 100, 100)) {
     ZeroDriveEncoders();
     driveBreak();
     state = ROTATE_TOWARD_WALL;
@@ -419,14 +421,14 @@ void reverseOnLine() {
 }
 void rotateTowardWall() {
   //4000
-  if (DriveToPos(3850, 3850, -80, 80)) {
+  if (DriveToPos(3850, 3850, 80, -80)) {
     ZeroDriveEncoders();
     driveBreak();
     state = MOVE_TOWARD_WALL;
   }
 }
 void moveTowardWall() {
-  if (DriveToPos(20700, 20700, 50, 50)) {
+  if (DriveToPos(20700, 20700, -80, -80)) {
     ZeroDriveEncoders();
     driveBreak();
     state = BACK_FROM_WALL;
@@ -434,7 +436,7 @@ void moveTowardWall() {
 }
 
 void backFromWall(){
-  if (DriveToPos(3500, 3500, -50, -50)){
+  if (DriveToPos(500, 500, 30, 30)){
     ZeroDriveEncoders();
     driveBreak();
     state = ROTATE_TOWARD_GOAL;
@@ -442,7 +444,7 @@ void backFromWall(){
 }
 
 void rotateTowardGoal() {
-  if (DriveToPos(3750, 3750, 30, -30)) {
+  if (DriveToPos(4650, 4650, -30, 30)) {
     ZeroDriveEncoders();
     driveBreak();
     state = MOVE_TOWARD_GOAL;
@@ -457,7 +459,7 @@ void moveTowardGoal() {
 }
 
 void reachedGoal() {
-    if (DriveToPos(100, 100, -50, -50)) {
+    if (DriveToPos(100, 100, 50, -50)) {
     ZeroDriveEncoders();
     driveBreak();
     state = RAISE_ARM;
@@ -494,7 +496,7 @@ void finalHome(){
 
 void reverseFromBasket(){
   //3300
-  if (DriveToPos(8000, 8000, -50, -50)){
+  if (DriveToPos(6500, 6500, -50, -50)){
     ZeroDriveEncoders();
     driveBreak();
     state = ROTATE_TOWARD_LINE;
@@ -502,7 +504,7 @@ void reverseFromBasket(){
 }
 
 void rotateTowardLine(){
-  if (DriveToPos(3750, 3750, -30, 30)) {
+  if (DriveToPos(3750, 3750, -80, 80)) {
     ZeroDriveEncoders();
     driveBreak();
     state = SQUARE_TOWARD_WALL;
@@ -518,7 +520,7 @@ void squareTowardWall(){
 }
 
 void moveTowardLine(){
-  if (DriveToPos(18000, 18000, -50, -50)) { // needs to be less
+  if (DriveToPos(18000, 18000, -80, -80)) { 
     ZeroDriveEncoders();
     driveBreak();
     state = FIND_LINE;
@@ -543,7 +545,7 @@ void findLine(){
 }
 
 void moveFromLine(){
-  if (DriveToPos(1000, 1000, -50, -50)) { // needs to be less
+  if (DriveToPos(1500, 1500, -50, -50)) { 
     ZeroDriveEncoders();
     driveBreak();
     state = ROTATE_AT_LINE;
@@ -551,7 +553,7 @@ void moveFromLine(){
 }
 
 void rotateAtLine(){
-  if (DriveToPos(3750, 3750, 30, -30)) {
+  if (DriveToPos(3750, 3750, 50, -50)) {
     ZeroDriveEncoders();
     driveBreak();
     state = LINE_FOLLOWING_RETURN;
@@ -559,12 +561,12 @@ void rotateAtLine(){
 }
 
 void lineFollowingReturn(){
-  if (followLine(-30, -10)) {
+  if (followLine(-30, -5)) {
      //Serial.println("f");
      ZeroDriveEncoders();
      driveBreak();
-     state = COMPLETE;
-     //state = ENTER_LOADING;
+     //state = COMPLETE;
+     state = ENTER_LOADING;
   }
 }
 
@@ -619,7 +621,7 @@ bool followLine(int lineVelocity, int turnVelocity){
     leftVelocity = lineVelocity + turnVelocity/2;
     rightVelocity = lineVelocity - turnVelocity/2;
     //Serial.println("RM");
-  }else if(middleLine && (leftLine && rightLine)){
+  }else if(middleLine && (leftLine && rightLine) && getEncoderCounts(DRIVE_MOTOR_L) < -20000){
     leftVelocity = 0;
     rightVelocity = 0;
     runMotor(DRIVE_MOTOR_L, 0);

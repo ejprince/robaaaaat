@@ -680,77 +680,78 @@ void setup() {
 
 
 void loop() {
-    switch (state) {
-      case HOMING:
-        homeArm();
-        break;
-      case INTAKE:
-        intake();
-        break;
-      case STOP_LOADING:
-        stopLoading();
-        break;
-      case REVERSE_ON_LINE:
-        reverseOnLine();
-        break;
-      case ROTATE_TOWARD_WALL:
-        rotateTowardWall();
-        break;
-      case MOVE_TOWARD_WALL:
-        moveTowardWall();
-        break;
-      case BACK_FROM_WALL:
-        backFromWall();
-        break;
-      case ROTATE_TOWARD_GOAL:
-        rotateTowardGoal();
-        break;
-      case MOVE_TOWARD_GOAL:
-        moveTowardGoal();
-        break;
-      case REACHED_GOAL:
-        reachedGoal();
-        break;
-      case RAISE_ARM:
-        raiseArm();
-        break;
-      case OUTTAKE:
-        outtake();
-        break;
-      case FINAL_HOME:
-        finalHome();
-        break;
-      case REVERSE_FROM_BASKET:
-        reverseFromBasket(); 
-        break;
-      case ROTATE_TOWARD_LINE:
-        rotateTowardLine(); 
-        break;
-      case SQUARE_TOWARD_WALL:
-        squareTowardWall();
-        break;
-      case MOVE_TOWARD_LINE:
-        moveTowardLine(); 
-        break;
-      case ROTATE_AT_LINE:
-        rotateAtLine(); 
-        break;
-      case LINE_FOLLOWING_RETURN:
-        lineFollowingReturn();
-      case ENTER_LOADING:
-        enterLoading();
-        break; 
-      case COMPLETE:
-        break;
-      case LINE_FOLLOWING:
-        followLine(-30, -10);
-        break;
-      case TEST_ROTATION:
-        testRotation();
-        break;
-      default:    // Should never get into an unhandled state
-        Serial.println("What is this I do not even...");
-        }
+    Serial.println(digitalRead(COLOR_PIN));
+//    switch (state) {
+//      case HOMING:
+//        homeArm();
+//        break;
+//      case INTAKE:
+//        intake();
+//        break;
+//      case STOP_LOADING:
+//        stopLoading();
+//        break;
+//      case REVERSE_ON_LINE:
+//        reverseOnLine();
+//        break;
+//      case ROTATE_TOWARD_WALL:
+//        rotateTowardWall();
+//        break;
+//      case MOVE_TOWARD_WALL:
+//        moveTowardWall();
+//        break;
+//      case BACK_FROM_WALL:
+//        backFromWall();
+//        break;
+//      case ROTATE_TOWARD_GOAL:
+//        rotateTowardGoal();
+//        break;
+//      case MOVE_TOWARD_GOAL:
+//        moveTowardGoal();
+//        break;
+//      case REACHED_GOAL:
+//        reachedGoal();
+//        break;
+//      case RAISE_ARM:
+//        raiseArm();
+//        break;
+//      case OUTTAKE:
+//        outtake();
+//        break;
+//      case FINAL_HOME:
+//        finalHome();
+//        break;
+//      case REVERSE_FROM_BASKET:
+//        reverseFromBasket(); 
+//        break;
+//      case ROTATE_TOWARD_LINE:
+//        rotateTowardLine(); 
+//        break;
+//      case SQUARE_TOWARD_WALL:
+//        squareTowardWall();
+//        break;
+//      case MOVE_TOWARD_LINE:
+//        moveTowardLine(); 
+//        break;
+//      case ROTATE_AT_LINE:
+//        rotateAtLine(); 
+//        break;
+//      case LINE_FOLLOWING_RETURN:
+//        lineFollowingReturn();
+//      case ENTER_LOADING:
+//        enterLoading();
+//        break; 
+//      case COMPLETE:
+//        break;
+//      case LINE_FOLLOWING:
+//        followLine(-30, -10);
+//        break;
+//      case TEST_ROTATION:
+//        testRotation();
+//        break;
+//      default:    // Should never get into an unhandled state
+//        Serial.println("What is this I do not even...");
+//        }
 
 }
 

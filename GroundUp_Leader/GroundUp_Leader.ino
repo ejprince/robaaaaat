@@ -447,7 +447,7 @@ void reverseOnLine() {
 }
 void rotateTowardWall() {
   //4000
-  if (DriveToPos(3850, 3850, 80, -80)) {
+  if (DriveToPos(3850, 3850, COLOR*80, COLOR*-80)) {
     ZeroDriveEncoders();
     driveBreak();
     state = MOVE_TOWARD_WALL;
@@ -470,7 +470,7 @@ void backFromWall(){
 }
 
 void rotateTowardGoal() {
-  if (DriveToPos(4650, 4650, -30, 30)) {
+  if (DriveToPos(4650, 4650, COLOR*-30, COLOR*30)) {
     ZeroDriveEncoders();
     driveBreak();
     state = MOVE_TOWARD_GOAL;
@@ -485,7 +485,7 @@ void moveTowardGoal() {
 }
 
 void reachedGoal() {
-    if (DriveToPos(100, 100, 50, -50)) {
+    if (DriveToPos(100, 100, -50, -50)) {
     ZeroDriveEncoders();
     driveBreak();
     state = RAISE_ARM;
@@ -530,7 +530,7 @@ void reverseFromBasket(){
 }
 
 void rotateTowardLine(){
-  if (DriveToPos(3750, 3750, -80, 80)) {
+  if (DriveToPos(3750, 3750, COLOR*-80, COLOR*80)) {
     ZeroDriveEncoders();
     driveBreak();
     state = SQUARE_TOWARD_WALL;
@@ -579,7 +579,7 @@ void moveFromLine(){
 }
 
 void rotateAtLine(){
-  if (DriveToPos(3750, 3750, 50, -50)) {
+  if (DriveToPos(3750, 3750, COLOR*50, COLOR*-50)) {
     ZeroDriveEncoders();
     driveBreak();
     state = LINE_FOLLOWING_RETURN;
@@ -655,8 +655,8 @@ bool followLine(int lineVelocity, int turnVelocity){
     Serial.println("LMR");
     return true;
   }else{
-    leftVelocity = -turnVelocity;
-    rightVelocity = turnVelocity;
+    leftVelocity = COLOR*-turnVelocity;
+    rightVelocity = COLOR*turnVelocity;
     Serial.println("else");
   }
   VelPID(DRIVE_MOTOR_L, leftVelocity);
@@ -669,11 +669,17 @@ bool followLine(int lineVelocity, int turnVelocity){
   return false;
 }
 
+void stopGame() {
+  state = COMPLETE;
+  driveBreak();
+  Take(0);
+  runMotor(ARM_MOTOR, 0);
+}
 
 void setup() {
+  GameTimer.begin(stopGame, 65000000);
   // put your setup code here, to run once:
   Serial.begin(9600);
-  Serial1.begin(9600);
 
   pinMode(COLOR_PIN, INPUT);
   if (digitalRead(COLOR_PIN) == HIGH) {

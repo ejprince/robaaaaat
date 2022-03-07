@@ -403,6 +403,8 @@ void stopRobot(){
    if (millis()%100 == 0) {
       Serial.println("STOPPED");
   }
+  VelPID(DRIVE_MOTOR_L, -30);
+  VelPID(DRIVE_MOTOR_R, -30);
   if (!ButtonPressed())
     state = HOMING;
 }
@@ -439,11 +441,20 @@ void stopLoading(){
 }
 
 void reverseOnLine() {
-  if (DriveToPos(29800, 29800, 100, 100)) {
+ if (COLOR == BLUE) {
+  if (DriveToPos(29800, 29800, 105, 100)) {
     ZeroDriveEncoders();
     driveBreak();
     state = ROTATE_TOWARD_WALL;
   }
+ }
+ else {
+    if (DriveToPos(29800, 29800, 100, 102)) {
+    ZeroDriveEncoders();
+    driveBreak();
+    state = ROTATE_TOWARD_WALL;
+ }
+ }
 }
 void rotateTowardWall() {
   //4000
@@ -477,7 +488,7 @@ void rotateTowardGoal() {
   }
 }
 void moveTowardGoal() {
-  if (DriveToPos(14000, 14000, 50, 50)) {
+  if (DriveToPos(16000, 16000, 70, 70)) {
     ZeroDriveEncoders();
     driveBreak();
     state = REACHED_GOAL;
@@ -670,14 +681,15 @@ bool followLine(int lineVelocity, int turnVelocity){
 }
 
 void stopGame() {
-  state = COMPLETE;
   driveBreak();
   Take(0);
   runMotor(ARM_MOTOR, 0);
+  state = COMPLETE;
+  delay(10000000000000000);
 }
 
 void setup() {
-  GameTimer.begin(stopGame, 65000000);
+  GameTimer.begin(stopGame, 130000000);
   // put your setup code here, to run once:
   Serial.begin(9600);
 
